@@ -802,8 +802,36 @@ App.Store = (function(){
     getProfitAll,getProfit,setProfit,
     getChecklists,setChecklists,
     getReports,setReports,
+    exportAll,importAll,
     searchAll,getTodaySummary,generateMonthlyReport
   };
+  // 整库快照导出：把所有 key 原样读出，保证 100% 完整
+  function exportAll(){
+    const data={};
+    Object.keys(KEYS).forEach(k=>{ data[k]=read(KEYS[k],null); });
+    return {
+      _app:'xiaowanzi-workbench',
+      _version:1,
+      _exportedAt:new Date().toISOString(),
+      _keys:Object.assign({},KEYS),
+      data
+    };
+  }
+  // 整库快照导入：把备份原样写回每个 key，完整还原
+  function importAll(snapshot,opts){
+    opts=opts||{};
+    if(!snapshot||!snapshot.data) throw new Error('备份文件格式不正确');
+    let count=0;
+    Object.keys(snapshot.data).forEach(k=>{
+      const val=snapshot.data[k];
+      if(val===null||val===undefined) return;
+      // 优先用备份里记录的 key 名，回退到当前 KEYS
+      const storageKey=(snapshot._keys&&snapshot._keys[k])||KEYS[k]||k;
+      if(!storageKey) return;
+      write(storageKey,val); count++;
+    });
+    return count;
+  }
 })();
 
 /* ============ App.Speech ============ */
@@ -1040,7 +1068,15 @@ App.Router = (function(){
 
   function expandSidebar(){document.getElementById('sidebar').classList.add('expanded');document.getElementById('sidebar-overlay').classList.add('visible')}
   function collapseSidebar(){document.getElementById('sidebar').classList.remove('expanded');document.getElementById('sidebar-overlay').classList.remove('visible')}
-  return {init,navigate,getCurrentView,expandSidebar,collapseSidebar,NAV};
+  // 强制全量刷新：清空渲染缓存，当前视图重新渲染（用于导入数据后整体还原）
+  function forceReload(){
+    const view=getCurrentView();
+    Object.keys(rendered).forEach(k=>delete rendered[k]);
+    const mod=App.Modules&&App.Modules[cap(view)];
+    if(mod&&mod.render){mod.render();rendered[view]=true}
+    else handleRoute();
+  }
+  return {init,navigate,getCurrentView,expandSidebar,collapseSidebar,forceReload,NAV};
 })();
 
 /* ============ 业务模块 ============ */
@@ -3219,7 +3255,14 @@ App.Modules.Settings = (function(){
         <select id="set-summary"><option value="false" ${!s.homeSummaryHidden?'selected':''}>显示</option><option value="true" ${s.homeSummaryHidden?'selected':''}>隐藏</option></select>
       </div>
       <div class="form-row"><label>数据存储用量</label><div id="storage-usage" class="fs-sm c-2"></div></div>
-      <div class="form-row"><label>导出全部数据（JSON备份）</label><button class="btn btn-ghost btn-sm" id="set-export-all">导出全部</button></div>
+      <div class="form-row">
+        <label>数据备份与恢复<br><span class="fs-xs c-3">导出可保存全部数据；导入可完整还原（覆盖当前数据）</span></label>
+        <div class="row">
+          <button class="btn btn-ghost btn-sm" id="set-export-all">⬇️ 导出全部</button>
+          <button class="btn btn-ghost btn-sm" id="set-import-all">⬆️ 导入备份</button>
+          <input type="file" id="set-import-file" accept="application/json,.json" style="display:none">
+        </div>
+      </div>
       <div class="form-actions"><button class="btn btn-primary" id="set-save">保存</button></div>`);
     let total=0;
     for(let i=0;i<localStorage.length;i++){
@@ -3227,11 +3270,32 @@ App.Modules.Settings = (function(){
     }
     document.getElementById('storage-usage').textContent=`已使用 ${(total/1024/1024).toFixed(2)} MB（上限约 5 MB）`;
     document.getElementById('set-export-all').addEventListener('click',()=>{
-      const dump={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('mj_'))dump[k]=JSON.parse(localStorage.getItem(k)||'null')}
-      const blob=new Blob(['\uFEFF'+JSON.stringify(dump,null,2)],{type:'application/json'});
+      const snap=App.Store.exportAll();
+      const blob=new Blob(['\uFEFF'+JSON.stringify(snap,null,2)],{type:'application/json'});
       const url=URL.createObjectURL(blob);const a=document.createElement('a');
       a.href=url;a.download=`小丸子的工作台_备份_${App.Utils.todayStr()}.json`;document.body.appendChild(a);a.click();document.body.removeChild(a);
       setTimeout(()=>URL.revokeObjectURL(url),1000);App.showToast('已导出全部数据');
+    });
+    // 导入：读取 JSON 文件 → importAll 整库还原 → 刷新全部视图
+    document.getElementById('set-import-all').addEventListener('click',()=>{document.getElementById('set-import-file').click();});
+    document.getElementById('set-import-file').addEventListener('change',function(){
+      const f=this.files&&this.files[0];if(!f)return;
+      const reader=new FileReader();
+      reader.onload=function(){
+        try{
+          const snap=JSON.parse(reader.result.replace(/^\uFEFF/,''));
+          const n=App.Store.importAll(snap);
+          App.closeModal();
+          App.showToast('已恢复 '+n+' 项数据，正在刷新…');
+          // 全量刷新：重新进入当前视图，并刷新所有模块渲染
+          setTimeout(()=>{
+            if(App.Router&&App.Router.forceReload){App.Router.forceReload()}
+            else if(App.Router&&App.Router.go){App.Router.go(App.Router.getCurrentView()||'home')}
+            else location.reload();
+          },600);
+        }catch(e){App.showToast('导入失败：'+e.message);}
+      };
+      reader.readAsText(f);this.value='';
     });
     document.getElementById('set-save').addEventListener('click',()=>{
       const pwdInput=document.getElementById('set-profit-pwd').value;
