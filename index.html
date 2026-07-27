@@ -1367,7 +1367,7 @@ App.Modules.Home = (function(){
   }
   function moodName(m){return{relaxed:'舒心',plain:'平淡',tired:'疲惫',irritated:'烦躁',joyful:'愉悦'}[m]||m}
   function habitName(k){return{shampoo:'洗头',iron:'补铁维生素',reading:'阅读',weight:'体重',mood:'心情'}[k]||k}
-  function onShow(){renderSummary()}
+  function onShow(){renderHomeTasks();renderSummary();}
   App.renderReportToHTML=renderReportToHTML;
   return {render,onShow};
 })();
