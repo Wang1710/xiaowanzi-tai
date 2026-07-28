@@ -681,7 +681,7 @@ App.Store = (function(){
 
   // settings
   function getSettings(){
-    return Object.assign({city:'绍兴柯桥',sidebarCollapsed:false,homeSummaryHidden:false,translationApiKey:''},read(KEYS.settings,{}));
+    return Object.assign({city:'绍兴',sidebarCollapsed:false,homeSummaryHidden:false,translationApiKey:''},read(KEYS.settings,{}));
   }
   function setSettings(s){write(KEYS.settings,Object.assign(getSettings(),s))}
 
@@ -1021,7 +1021,12 @@ App.Weather = (function(){
   };
   async function fetchWeather(city){
     let data = await tryFetchWeather(city);
-    // 逐步截断，处理如"绍兴柯桥"先尝试完整名再尝试"绍兴"
+    // 回退：去掉末尾"区/县/镇/乡/街道"等行政区后缀重试，如"绍兴柯桥"→"绍兴"
+    if (!data) {
+      const m = city.match(/^(.+?)(区|县|镇|乡|街道|新区|开发区)$/);
+      if (m) data = await tryFetchWeather(m[1]);
+    }
+    // 再试逐级截断兜底
     if (!data && city.length > 2) {
       for (let i = city.length - 1; i >= 2 && !data; i--) {
         const fallback = city.slice(0, i);
@@ -1034,7 +1039,7 @@ App.Weather = (function(){
   }
   async function tryFetchWeather(city){
     try{
-      const geoUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=zh&format=json`;
+      const geoUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=5&language=zh&format=json`;
       const geoRes=await fetch(geoUrl);
       const geoData=await geoRes.json();
       if(!geoData.results||!geoData.results.length)return null;
@@ -1268,7 +1273,7 @@ App.Modules.Home = (function(){
     App.openModal('切换城市',`
       <div class="form-row">
         <label>城市名称</label>
-        <input type="text" id="new-city-input" placeholder="如：绍兴柯桥 / 杭州 / 上海" value="${App.Utils.escapeHtml(App.Store.getSettings().city)}">
+        <input type="text" id="new-city-input" placeholder="如：绍兴 / 杭州 / 上海" value="${App.Utils.escapeHtml(App.Store.getSettings().city)}">
       </div>
       <div class="form-actions">
         <button class="btn btn-ghost" onclick="App.closeModal()">取消</button>
@@ -3364,7 +3369,7 @@ App.Modules.Settings = (function(){
     document.getElementById('set-save').addEventListener('click',()=>{
       const pwdInput=document.getElementById('set-profit-pwd').value;
       const next=Object.assign({},s,{
-        city:document.getElementById('set-city').value.trim()||'绍兴柯桥',
+        city:document.getElementById('set-city').value.trim()||'绍兴',
         translationApiKey:document.getElementById('set-key').value.trim(),
         homeSummaryHidden:document.getElementById('set-summary').value==='true'
       });
