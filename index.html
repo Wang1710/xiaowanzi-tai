@@ -347,6 +347,25 @@ details.card>.card-body{padding:0 14px 12px}
 .habit-card-header{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .habit-card-title{font-size:var(--f-sm);color:var(--text-2);font-weight:500}
 .habit-card-body{display:flex;align-items:center;gap:4px}
+
+/* 月历视图 */
+.cal-nav{display:flex;align-items:center;justify-content:space-between;padding:2px 0 6px}
+.cal-title{font-size:var(--f-md);font-weight:600}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-head{text-align:center;font-size:var(--f-xs);color:var(--text-3);padding:2px 0}
+.cal-cell{border:1px solid var(--border);border-radius:var(--r-sm);padding:3px 2px;min-height:52px;font-size:var(--f-xs);display:flex;flex-direction:column;gap:1px;cursor:pointer;background:var(--bg-card)}
+.cal-cell.empty{border:none;background:transparent;cursor:default}
+.cal-cell.today{border-color:var(--c-purple);background:#fff9e6;box-shadow:0 0 0 1px var(--c-purple)}
+.cal-date{font-weight:600;color:var(--text-2);align-self:flex-start}
+.cal-weight{font-weight:700;color:var(--text);font-size:var(--f-xs)}
+.cal-diff{font-size:10px;font-weight:600}
+.cal-diff.up{color:var(--danger)}
+.cal-diff.down{color:var(--success)}
+.cal-dots{display:flex;gap:2px;flex-wrap:wrap;margin-top:auto}
+.cal-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex:none}
+.cal-dot-habit{background:var(--cat-work)}
+.cal-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--text-2)}
+.cal-legend span{display:flex;align-items:center;gap:2px}
 .habit-weight-input{width:56px;max-width:56px;flex:none;min-height:22px;height:22px;padding:1px 4px;text-align:center;font-size:var(--f-sm)}
 .habit-unit{font-size:var(--f-xs);color:var(--text-3)}
 .habit-check-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px}
@@ -1582,6 +1601,7 @@ App.Modules.Daily = (function(){
           <div class="habit-tabs" id="habit-tabs">
             <button class="habit-tab active" data-view="week">本周汇总</button>
             <button class="habit-tab" data-view="month">每月汇总</button>
+            <button class="habit-tab" data-view="calendar">📅 月历</button>
           </div>
           <div class="habits-grid" id="habits-grid"></div>
           <div id="mood-note-wrap" style="display:none;margin-top:8px">
@@ -1682,6 +1702,7 @@ App.Modules.Daily = (function(){
     const e=getEntry();const habitsList=getHabits();const habits=e.habits||[];
     const findH=k=>habits.find(h=>h.habitKey===k);
     const grid=document.getElementById('habits-grid');
+    if(habitView==='calendar'){renderCalendar(grid);return;}
     const dailyAll=App.Store.getDailyAll();
     const d=App.Utils.parseDate(currentDate);
     const dayOfWeek=d.getDay();const monday=new Date(d);monday.setDate(d.getDate()-(dayOfWeek===0?6:dayOfWeek-1));
@@ -1754,6 +1775,86 @@ App.Modules.Daily = (function(){
     const cnt=habitsList.filter(h=>done.includes(h.key)).length;
     const el=document.getElementById('habit-count');
     if(el)el.textContent=`${cnt}/${habitsList.length}`;
+  }
+  // 月历视图：体重+心情
+  function renderCalendar(grid){
+    const dailyAll=App.Store.getDailyAll();
+    const d=App.Utils.parseDate(currentDate);
+    let calYear=d.getFullYear(),calMonth=d.getMonth();
+    const firstDay=new Date(calYear,calMonth,1);
+    const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+    const startWeekday=firstDay.getDay(); // 0=日 1=一...6=六
+    const padBefore=(startWeekday===0)?6:startWeekday-1;
+    const today=App.Utils.todayStr();
+    const getDayData=dateStr=>{
+      const en=dailyAll[dateStr];if(!en)return null;
+      const hs=en.habits||[];
+      const weightRec=hs.find(h=>h.habitKey==='weight');
+      const moodRec=hs.find(h=>h.habitKey==='mood');
+      const hasHabit=hs.length>0;
+      return {weight:weightRec?weightRec.value:null,mood:moodRec?moodRec.mood:null,hasHabit};
+    };
+    const prevDate=()=>{const nd=new Date(calYear,calMonth,0);currentDate=App.Utils.formatDate(nd);renderDay();};
+    const nextDate=()=>{const nd=new Date(calYear,calMonth+1,1);currentDate=App.Utils.formatDate(nd);renderDay();};
+    let cells='';
+    const weekHeads=['一','二','三','四','五','六','日'];
+    cells+=weekHeads.map(w=>`<div class="cal-head">${w}</div>`).join('');
+    // 前置空格
+    for(let i=0;i<padBefore;i++)cells+=`<div class="cal-cell empty"></div>`;
+    for(let day=1;day<=daysInMonth;day++){
+      const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const data=getDayData(dateStr);
+      // 与昨日对比
+      let diffHtml='';
+      if(data&&data.weight!=null){
+        const yd=new Date(calYear,calMonth, day-1);
+        const yStr=App.Utils.formatDate(yd);
+        const yData=getDayData(yStr);
+        if(yData&&yData.weight!=null){
+          const diff=Math.round((data.weight-yData.weight)*10)/10;
+          if(diff!==0){
+            const up=diff>0;
+            diffHtml=`<span class="cal-diff ${up?'up':'down'}">${Math.abs(diff).toFixed(1)}${up?'↑':'↓'}</span>`;
+          }
+        }
+      }
+      // 心情圆点
+      const MOOD_DOT={relaxed:'#6db86d',joyful:'#5b8db8',plain:'#e0b878',irritated:'#c45b5b',tired:'#999'};
+      let moodDot='';
+      if(data&&data.mood){moodDot=`<span class="cal-dot" style="background:${MOOD_DOT[data.mood]||'#ccc'}"></span>`;}
+      // 习惯打卡蓝点
+      let habitDot='';
+      if(data&&data.hasHabit){habitDot=`<span class="cal-dot cal-dot-habit"></span>`;}
+      const dots=(moodDot||habitDot)?`<div class="cal-dots">${moodDot}${habitDot}</div>`:'';
+      const weightHtml=data&&data.weight!=null?`<span class="cal-weight">${data.weight}</span>`:'';
+      const isToday=dateStr===today;
+      cells+=`<div class="cal-cell ${isToday?'today':''}" data-date="${dateStr}">
+        <span class="cal-date">${day}</span>
+        ${weightHtml}
+        ${diffHtml}
+        ${dots}
+      </div>`;
+    }
+    grid.innerHTML=`
+      <div class="cal-nav">
+        <button class="btn-icon cal-prev">‹</button>
+        <span class="cal-title">${calYear}年${calMonth+1}月</span>
+        <button class="btn-icon cal-next">›</button>
+      </div>
+      <div class="calendar-grid">${cells}</div>
+      <div class="cal-legend">
+        <span><span class="cal-dot cal-dot-habit"></span>打卡</span>
+        <span><span class="cal-dot" style="background:#6db86d"></span>舒心</span>
+        <span><span class="cal-dot" style="background:#5b8db8"></span>愉悦</span>
+        <span><span class="cal-dot" style="background:#e0b878"></span>平淡</span>
+        <span><span class="cal-dot" style="background:#c45b5b"></span>烦躁</span>
+        <span><span class="cal-dot" style="background:#999"></span>疲惫</span>
+      </div>`;
+    grid.querySelector('.cal-prev').addEventListener('click',prevDate);
+    grid.querySelector('.cal-next').addEventListener('click',nextDate);
+    grid.querySelectorAll('.cal-cell[data-date]').forEach(c=>c.addEventListener('click',()=>{
+      currentDate=c.dataset.date;renderDay();
+    }));
   }
   function saveMoodNote(v){
     const e=getEntry();let rec=(e.habits||[]).find(h=>h.habitKey==='mood');
@@ -2208,6 +2309,7 @@ App.Modules.Daily = (function(){
           <div class="habit-tabs" id="habit-tabs">
             <button class="habit-tab active" data-view="week">本周汇总</button>
             <button class="habit-tab" data-view="month">每月汇总</button>
+            <button class="habit-tab" data-view="calendar">📅 月历</button>
           </div>
           <div class="habits-grid" id="habits-grid"></div>
           <div id="mood-note-wrap" style="display:none;margin-top:8px">
@@ -2308,6 +2410,7 @@ App.Modules.Daily = (function(){
     const e=getEntry();const habitsList=getHabits();const habits=e.habits||[];
     const findH=k=>habits.find(h=>h.habitKey===k);
     const grid=document.getElementById('habits-grid');
+    if(habitView==='calendar'){renderCalendar(grid);return;}
     const dailyAll=App.Store.getDailyAll();
     const d=App.Utils.parseDate(currentDate);
     const dayOfWeek=d.getDay();const monday=new Date(d);monday.setDate(d.getDate()-(dayOfWeek===0?6:dayOfWeek-1));
@@ -2380,6 +2483,86 @@ App.Modules.Daily = (function(){
     const cnt=habitsList.filter(h=>done.includes(h.key)).length;
     const el=document.getElementById('habit-count');
     if(el)el.textContent=`${cnt}/${habitsList.length}`;
+  }
+  // 月历视图：体重+心情
+  function renderCalendar(grid){
+    const dailyAll=App.Store.getDailyAll();
+    const d=App.Utils.parseDate(currentDate);
+    let calYear=d.getFullYear(),calMonth=d.getMonth();
+    const firstDay=new Date(calYear,calMonth,1);
+    const daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+    const startWeekday=firstDay.getDay(); // 0=日 1=一...6=六
+    const padBefore=(startWeekday===0)?6:startWeekday-1;
+    const today=App.Utils.todayStr();
+    const getDayData=dateStr=>{
+      const en=dailyAll[dateStr];if(!en)return null;
+      const hs=en.habits||[];
+      const weightRec=hs.find(h=>h.habitKey==='weight');
+      const moodRec=hs.find(h=>h.habitKey==='mood');
+      const hasHabit=hs.length>0;
+      return {weight:weightRec?weightRec.value:null,mood:moodRec?moodRec.mood:null,hasHabit};
+    };
+    const prevDate=()=>{const nd=new Date(calYear,calMonth,0);currentDate=App.Utils.formatDate(nd);renderDay();};
+    const nextDate=()=>{const nd=new Date(calYear,calMonth+1,1);currentDate=App.Utils.formatDate(nd);renderDay();};
+    let cells='';
+    const weekHeads=['一','二','三','四','五','六','日'];
+    cells+=weekHeads.map(w=>`<div class="cal-head">${w}</div>`).join('');
+    // 前置空格
+    for(let i=0;i<padBefore;i++)cells+=`<div class="cal-cell empty"></div>`;
+    for(let day=1;day<=daysInMonth;day++){
+      const dateStr=`${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const data=getDayData(dateStr);
+      // 与昨日对比
+      let diffHtml='';
+      if(data&&data.weight!=null){
+        const yd=new Date(calYear,calMonth, day-1);
+        const yStr=App.Utils.formatDate(yd);
+        const yData=getDayData(yStr);
+        if(yData&&yData.weight!=null){
+          const diff=Math.round((data.weight-yData.weight)*10)/10;
+          if(diff!==0){
+            const up=diff>0;
+            diffHtml=`<span class="cal-diff ${up?'up':'down'}">${Math.abs(diff).toFixed(1)}${up?'↑':'↓'}</span>`;
+          }
+        }
+      }
+      // 心情圆点
+      const MOOD_DOT={relaxed:'#6db86d',joyful:'#5b8db8',plain:'#e0b878',irritated:'#c45b5b',tired:'#999'};
+      let moodDot='';
+      if(data&&data.mood){moodDot=`<span class="cal-dot" style="background:${MOOD_DOT[data.mood]||'#ccc'}"></span>`;}
+      // 习惯打卡蓝点
+      let habitDot='';
+      if(data&&data.hasHabit){habitDot=`<span class="cal-dot cal-dot-habit"></span>`;}
+      const dots=(moodDot||habitDot)?`<div class="cal-dots">${moodDot}${habitDot}</div>`:'';
+      const weightHtml=data&&data.weight!=null?`<span class="cal-weight">${data.weight}</span>`:'';
+      const isToday=dateStr===today;
+      cells+=`<div class="cal-cell ${isToday?'today':''}" data-date="${dateStr}">
+        <span class="cal-date">${day}</span>
+        ${weightHtml}
+        ${diffHtml}
+        ${dots}
+      </div>`;
+    }
+    grid.innerHTML=`
+      <div class="cal-nav">
+        <button class="btn-icon cal-prev">‹</button>
+        <span class="cal-title">${calYear}年${calMonth+1}月</span>
+        <button class="btn-icon cal-next">›</button>
+      </div>
+      <div class="calendar-grid">${cells}</div>
+      <div class="cal-legend">
+        <span><span class="cal-dot cal-dot-habit"></span>打卡</span>
+        <span><span class="cal-dot" style="background:#6db86d"></span>舒心</span>
+        <span><span class="cal-dot" style="background:#5b8db8"></span>愉悦</span>
+        <span><span class="cal-dot" style="background:#e0b878"></span>平淡</span>
+        <span><span class="cal-dot" style="background:#c45b5b"></span>烦躁</span>
+        <span><span class="cal-dot" style="background:#999"></span>疲惫</span>
+      </div>`;
+    grid.querySelector('.cal-prev').addEventListener('click',prevDate);
+    grid.querySelector('.cal-next').addEventListener('click',nextDate);
+    grid.querySelectorAll('.cal-cell[data-date]').forEach(c=>c.addEventListener('click',()=>{
+      currentDate=c.dataset.date;renderDay();
+    }));
   }
   function saveMoodNote(v){
     const e=getEntry();let rec=(e.habits||[]).find(h=>h.habitKey==='mood');
