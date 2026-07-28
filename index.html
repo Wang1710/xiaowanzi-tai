@@ -329,7 +329,9 @@ details.card>.card-body{padding:0 14px 12px}
 .quick-note-item{background:var(--bg-main);border-radius:var(--r-sm);padding:6px 10px;font-size:var(--f-sm);display:flex;align-items:center;gap:6px}
 .quick-note-item .qn-text{flex:1;word-break:break-word}
 .tasks-list{display:flex;flex-direction:column;gap:4px}
-.task-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:var(--r-sm);min-height:36px}
+.task-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:var(--r-sm);min-height:36px;border-left:3px solid transparent}
+.task-item.todo{border-left-color:var(--cat-work)}
+.task-item.reminder{border-left-color:#e0966a}
 .task-item .task-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .task-item .task-icon.task-check{width:22px;height:22px;border:2px solid var(--text-3);border-radius:5px;background:transparent;color:#fff;font-size:13px;font-weight:700}
 .task-item.todo.completed .task-icon.task-check{background:var(--c-green);border-color:var(--c-green)}
@@ -596,6 +598,7 @@ details.card>.card-body{padding:0 14px 12px}
       <section id="view-profit" class="view-panel"></section>
       <section id="view-checklist" class="view-panel"></section>
       <section id="view-books" class="view-panel"></section>
+      <section id="view-tasks" class="view-panel"></section>
     </div>
   </main>
 </div>
@@ -1097,6 +1100,7 @@ App.Router = (function(){
     {view:'inspiration',icon:'💡',label:'灵感小站',short:'灵感'},
     {view:'profit',icon:'📈',label:'盈亏管理',short:'盈亏'},
     {view:'checklist',icon:'✅',label:'清单小盒',short:'清单'},
+    {view:'tasks',icon:'📋',label:'事项管理',short:'事项'},
     {view:'books',icon:'📚',label:'书海小藏',short:'书海'}
   ];
   const rendered={};
@@ -1232,7 +1236,7 @@ App.Modules.Home = (function(){
           <summary><span>📝 今日事项</span><span class="count" id="home-tasks-count" style="margin-left:auto"></span></summary>
           <div class="card-body">
             <div id="home-tasks"></div>
-            <button class="btn btn-ghost btn-sm mt8" onclick="App.Router.navigate('daily')">去每日小事 →</button>
+            <button class="btn btn-ghost btn-sm mt8" onclick="App.Router.navigate('tasks')">去事项管理 →</button>
           </div>
         </details>
         <details class="card" id="monthly-report-card">
@@ -1610,16 +1614,6 @@ App.Modules.Daily = (function(){
           <button class="btn btn-ghost btn-sm mt8" id="habit-manage">⚙ 管理习惯项目</button>
         </div>
       </details>
-      <details class="card" open><summary>事项管理 <span class="count" id="task-count">0</span></summary>
-        <div class="card-body">
-          <div class="row wrap mb6">
-            <select id="task-type" style="width:auto;min-width:90px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
-            <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
-            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
-          </div>
-          <div class="tasks-list" id="task-list"></div>
-        </div>
-      </details>
       <details class="card" open><summary>灵感速记 <span class="count" id="qn-count">0</span></summary>
         <div class="card-body">
           <div class="row mb6"><input type="text" id="qn-input" placeholder="速记一条灵感…" style="flex:1;min-width:0">${App.speechBtnHTML('qn-input')}<button class="btn btn-primary btn-sm" id="qn-add">＋</button></div>
@@ -1632,11 +1626,9 @@ App.Modules.Daily = (function(){
     document.getElementById('d-stats').addEventListener('click',openMonthlyStats);
     panel.addEventListener('click',(e)=>{
       const btn=e.target.closest('#qn-add');if(btn){e.preventDefault();e.stopPropagation();addQuickNote();return}
-      const tbtn=e.target.closest('#task-add');if(tbtn){e.preventDefault();e.stopPropagation();addTask();return}
     });
     panel.addEventListener('keydown',(e)=>{
       if(e.target.id==='qn-input'&&e.key==='Enter'){e.preventDefault();addQuickNote()}
-      if(e.target.id==='task-input'&&e.key==='Enter'){e.preventDefault();addTask()}
     });
     document.getElementById('mood-note').addEventListener('input',e=>saveMoodNote(e.target.value));
     document.getElementById('habit-tabs').addEventListener('click',(e)=>{
@@ -1655,7 +1647,7 @@ App.Modules.Daily = (function(){
   }
   function renderDay(){
     document.getElementById('d-date').textContent=`${currentDate} 周${App.Utils.weekStr(App.Utils.parseDate(currentDate))}`;
-    renderQuickNotes();renderTasks();renderHabits();
+    renderQuickNotes();renderHabits();
   }
   function getEntry(){return App.Store.getDaily(currentDate)}
   function saveEntry(e){App.Store.setDaily(currentDate,e)}
@@ -2318,16 +2310,6 @@ App.Modules.Daily = (function(){
           <button class="btn btn-ghost btn-sm mt8" id="habit-manage">⚙ 管理习惯项目</button>
         </div>
       </details>
-      <details class="card" open><summary>事项管理 <span class="count" id="task-count">0</span></summary>
-        <div class="card-body">
-          <div class="row wrap mb6">
-            <select id="task-type" style="width:auto;min-width:90px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
-            <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
-            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
-          </div>
-          <div class="tasks-list" id="task-list"></div>
-        </div>
-      </details>
       <details class="card" open><summary>灵感速记 <span class="count" id="qn-count">0</span></summary>
         <div class="card-body">
           <div class="row mb6"><input type="text" id="qn-input" placeholder="速记一条灵感…" style="flex:1;min-width:0">${App.speechBtnHTML('qn-input')}<button class="btn btn-primary btn-sm" id="qn-add">＋</button></div>
@@ -2340,11 +2322,9 @@ App.Modules.Daily = (function(){
     document.getElementById('d-stats').addEventListener('click',openMonthlyStats);
     panel.addEventListener('click',(e)=>{
       const btn=e.target.closest('#qn-add');if(btn){e.preventDefault();e.stopPropagation();addQuickNote();return}
-      const tbtn=e.target.closest('#task-add');if(tbtn){e.preventDefault();e.stopPropagation();addTask();return}
     });
     panel.addEventListener('keydown',(e)=>{
       if(e.target.id==='qn-input'&&e.key==='Enter'){e.preventDefault();addQuickNote()}
-      if(e.target.id==='task-input'&&e.key==='Enter'){e.preventDefault();addTask()}
     });
     document.getElementById('mood-note').addEventListener('input',e=>saveMoodNote(e.target.value));
     document.getElementById('habit-tabs').addEventListener('click',(e)=>{
@@ -2363,7 +2343,7 @@ App.Modules.Daily = (function(){
   }
   function renderDay(){
     document.getElementById('d-date').textContent=`${currentDate} 周${App.Utils.weekStr(App.Utils.parseDate(currentDate))}`;
-    renderQuickNotes();renderTasks();renderHabits();
+    renderQuickNotes();renderHabits();
   }
   function getEntry(){return App.Store.getDaily(currentDate)}
   function saveEntry(e){App.Store.setDaily(currentDate,e)}
@@ -3764,6 +3744,79 @@ App.Modules.Books = (function(){
     });
   }
   function onShow(){renderList();}
+  return {render,onShow};
+})();
+
+/* ============ App.Modules.Tasks ============ */
+App.Modules.Tasks = (function(){
+  let currentDate=App.Utils.todayStr();
+  function getEntry(){return App.Store.getDaily(currentDate)}
+  function saveEntry(e){App.Store.setDaily(currentDate,e)}
+  function render(){
+    const panel=document.getElementById('view-tasks');
+    panel.innerHTML=`
+      <div class="date-picker">
+        <button class="btn-icon" id="t-prev">‹</button>
+        <span class="date-text" id="t-date"></span>
+        <button class="btn-icon" id="t-next">›</button>
+        <button class="btn-text" id="t-today">今天</button>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>事项管理</h3><span class="count" id="task-count">0</span></div>
+        <div class="card-body">
+          <div class="row wrap mb6">
+            <select id="task-type" style="width:auto;min-width:90px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
+            <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
+            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
+          </div>
+          <div class="tasks-list" id="task-list"></div>
+        </div>
+      </div>`;
+    document.getElementById('t-prev').addEventListener('click',()=>shiftDay(-1));
+    document.getElementById('t-next').addEventListener('click',()=>shiftDay(1));
+    document.getElementById('t-today').addEventListener('click',()=>{currentDate=App.Utils.todayStr();renderDay();});
+    panel.addEventListener('click',(e)=>{
+      const btn=e.target.closest('#task-add');if(btn){e.preventDefault();e.stopPropagation();addTask();return}
+    });
+    panel.addEventListener('keydown',(e)=>{
+      if(e.target.id==='task-input'&&e.key==='Enter'){e.preventDefault();addTask()}
+    });
+    App.bindSpeechBtns();
+    renderDay();
+  }
+  function shiftDay(delta){
+    const d=App.Utils.parseDate(currentDate);d.setDate(d.getDate()+delta);
+    currentDate=App.Utils.formatDate(d);renderDay();
+  }
+  function renderDay(){
+    document.getElementById('t-date').textContent=`${currentDate} 周${App.Utils.weekStr(App.Utils.parseDate(currentDate))}`;
+    renderTasks();
+  }
+  function renderTasks(){
+    const e=getEntry();const tasks=e.tasks||[];
+    document.getElementById('task-count').textContent=tasks.length;
+    document.getElementById('task-list').innerHTML=tasks.map(t=>`
+      <div class="task-item ${t.type} ${t.type==='todo'&&t.completed?'completed':''}" data-id="${t.id}">
+        <span class="task-icon ${t.type==='todo'?'task-check':''} ${t.type==='todo'&&t.completed?'checked':''}">${t.type==='todo'?(t.completed?'✓':''):'📌'}</span>
+        <span class="task-content" ${t.type==='todo'?`style="cursor:pointer"`:''}>${App.Utils.escapeHtml(t.content)}</span>
+        <button class="btn-icon task-del" data-id="${t.id}" style="width:28px;height:28px;font-size:12px">×</button>
+      </div>`).join('')||'<div class="empty-state" style="padding:12px">暂无事项</div>';
+    document.querySelectorAll('#task-list .task-item.todo').forEach(el=>el.addEventListener('click',()=>{
+      const id=el.dataset.id;const e=getEntry();
+      const t=e.tasks.find(x=>x.id===id);t.completed=!t.completed;saveEntry(e);renderTasks();
+    }));
+    document.querySelectorAll('#task-list .task-del').forEach(b=>b.addEventListener('click',e=>{
+      e.stopPropagation();const en=getEntry();en.tasks=en.tasks.filter(x=>x.id!==b.dataset.id);saveEntry(en);renderTasks();
+    }));
+  }
+  function addTask(){
+    const input=document.getElementById('task-input');const v=input.value.trim();if(!v)return;
+    const type=document.getElementById('task-type').value;
+    const e=getEntry();e.tasks=e.tasks||[];
+    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,createdAt:new Date().toISOString()});
+    saveEntry(e);input.value='';renderTasks();
+  }
+  function onShow(){renderDay();}
   return {render,onShow};
 })();
 
