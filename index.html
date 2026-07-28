@@ -274,6 +274,36 @@ details.card>.card-body{padding:0 14px 12px}
 .home-completed-body{display:none}
 .home-completed-section.open .home-completed-body{display:flex;flex-direction:column;gap:4px}
 
+/* ============ 书海小藏 Books ============ */
+.book-filter{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;-webkit-overflow-scrolling:touch}
+.book-filter .bf{flex:none;padding:4px 12px;border-radius:14px;background:var(--bg-card);border:1px solid var(--border);font-size:var(--f-sm);cursor:pointer;white-space:nowrap}
+.book-filter .bf.active{background:var(--c-orange);color:#fff;border-color:var(--c-orange)}
+.book-list{display:flex;flex-direction:column;gap:10px}
+.book-card{display:flex;gap:10px;background:var(--bg-card);border-radius:var(--r-md);padding:10px;box-shadow:var(--shadow);border:1px solid rgba(224,216,208,.4)}
+.book-cover{flex:none;width:60px;height:84px;border-radius:6px;overflow:hidden;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:1px dashed var(--border)}
+.book-cover img{width:100%;height:100%;object-fit:cover;display:block}
+.book-cover .cover-ph{font-size:22px;color:var(--text-3)}
+.book-cover .cover-upload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:rgba(0,0,0,.35);opacity:0;transition:opacity .15s;pointer-events:none}
+.book-cover:hover .cover-upload{opacity:1}
+.book-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.book-title-row{display:flex;align-items:flex-start;gap:6px}
+.book-title{flex:1;font-size:var(--f-md);font-weight:600;word-break:break-word}
+.book-author{font-size:var(--f-xs);color:var(--text-3);margin-top:2px}
+.book-del{flex:none;width:28px;height:28px;font-size:14px}
+.book-status-row{display:flex;gap:4px;flex-wrap:wrap}
+.book-status{flex:none;padding:2px 8px;border-radius:10px;font-size:var(--f-xs);border:1px solid var(--border);background:var(--bg-main);cursor:pointer}
+.book-status.active{background:var(--c-purple);color:#fff;border-color:var(--c-purple)}
+.book-stars{display:flex;gap:2px;align-items:center;font-size:16px}
+.book-star{cursor:pointer;color:var(--border);line-height:1;transition:transform .1s}
+.book-star.on{color:#f5b50a}
+.book-star:active{transform:scale(1.2)}
+.book-note{width:100%;font-size:var(--f-xs);resize:vertical;min-height:34px}
+.cover-zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400}
+.cover-zoom.show{display:flex}
+.cover-zoom img{max-width:90%;max-height:85%;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.cover-zoom .cz-tip{position:absolute;bottom:24px;color:#fff;font-size:var(--f-xs);opacity:.8}
+.cover-zoom .cz-actions{position:absolute;bottom:56px;display:flex;gap:8px}
+
 /* ============ 物品小集 ============ */
 .items-list{display:flex;flex-direction:column;gap:8px}
 .item-card{background:var(--bg-card);border-radius:var(--r-md);padding:10px 12px;box-shadow:var(--shadow);border:1px solid rgba(224,216,208,.4)}
@@ -543,6 +573,7 @@ details.card>.card-body{padding:0 14px 12px}
       <section id="view-inspiration" class="view-panel"></section>
       <section id="view-profit" class="view-panel"></section>
       <section id="view-checklist" class="view-panel"></section>
+      <section id="view-books" class="view-panel"></section>
     </div>
   </main>
 </div>
@@ -640,7 +671,7 @@ App.Store = (function(){
   const KEYS={
     items:'mj_items',daily:'mj_daily',projects:'mj_projects',oils:'mj_oils',
     inspiration:'mj_inspiration',profit:'mj_profit',checklists:'mj_checklists',
-    settings:'mj_settings',reports:'mj_monthly_reports'
+    settings:'mj_settings',reports:'mj_monthly_reports',books:'mj_books'
   };
   function read(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
   function write(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true}catch(e){App.showToast('存储失败，可能空间不足');return false}}
@@ -680,6 +711,10 @@ App.Store = (function(){
   // checklists
   function getChecklists(){return read(KEYS.checklists,{folders:[],lists:[]})}
   function setChecklists(d){write(KEYS.checklists,d)}
+
+  // books
+  function getBooks(){return read(KEYS.books,[])}
+  function setBooks(arr){write(KEYS.books,arr)}
 
   // reports
   function getReports(){return read(KEYS.reports,[])}
@@ -737,6 +772,11 @@ App.Store = (function(){
     (cl.lists||[]).forEach(l=>{
       const txt=`${l.title} ${(l.items||[]).map(i=>i.content).join(' ')}`;
       if(txt.toLowerCase().includes(q))pushRes('清单小盒',l.id,`${l.title} ${(l.items||[]).map(i=>i.content).join(' ')}`,'');
+    });
+    // books
+    getBooks().forEach(b=>{
+      const txt=`${b.title||''} ${(b.author||'')} ${b.status||''} ${(b.note||'')}`;
+      if(txt.toLowerCase().includes(q))pushRes('书海小藏',b.id,`${b.title||''} ${b.status||''}`,'');
     });
     return results;
   }
@@ -805,6 +845,7 @@ App.Store = (function(){
     getInspiration,setInspiration,
     getProfitAll,getProfit,setProfit,
     getChecklists,setChecklists,
+    getBooks,setBooks,
     getReports,setReports,
     exportAll,importAll,
     searchAll,getTodaySummary,generateMonthlyReport
@@ -1028,14 +1069,15 @@ App.Router = (function(){
     {view:'oils',icon:'🌿',label:'精油小册'},
     {view:'inspiration',icon:'💡',label:'灵感小站'},
     {view:'profit',icon:'📈',label:'盈亏管理'},
-    {view:'checklist',icon:'✅',label:'清单小盒'}
+    {view:'checklist',icon:'✅',label:'清单小盒'},
+    {view:'books',icon:'📚',label:'书海小藏'}
   ];
   const rendered={};
   function init(){
     // 渲染导航
     const nav=document.getElementById('nav-tree');
     nav.innerHTML=NAV.map(n=>{
-      const iconChar={home:'家',items:'物',daily:'日',projects:'项',oils:'油',inspiration:'灵',profit:'盈',checklist:'清'}[n.view];
+      const iconChar={home:'家',items:'物',daily:'日',projects:'项',oils:'油',inspiration:'灵',profit:'盈',checklist:'清',books:'书'}[n.view];
       return `<li class="nav-item nav-${n.view}" data-view="${n.view}"><span class="nav-icon">${iconChar}</span><span class="nav-label">${n.label}</span></li>`;
     }).join('');
     nav.querySelectorAll('.nav-item').forEach(el=>{
@@ -3332,6 +3374,207 @@ App.Modules.Settings = (function(){
   }
   return {open};
 })();
+
+/* ============ 书海小藏 Books ============ */
+App.Modules.Books = (function(){
+  const STATUSES=[
+    {key:'recommend',label:'推荐'},
+    {key:'reading',label:'在读'},
+    {key:'unread',label:'未读'},
+    {key:'read',label:'已读'}
+  ];
+  const STATUS_COLOR={recommend:'var(--c-purple)',reading:'var(--c-blue)',unread:'var(--text-3)',read:'var(--c-green)'};
+  let currentFilter='all';
+  function getList(){return App.Store.getBooks();}
+  function saveList(arr){App.Store.setBooks(arr);}
+  function findBook(id){return getList().find(b=>b.id===id);}
+  function updateBook(id,fn){const l=getList();const b=l.find(x=>x.id===id);if(!b)return;fn(b);saveList(l);}
+  // 图片压缩为 dataURL（限制宽高，减小体积）
+  function fileToDataURL(file,maxW,maxH,cb){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxW||h>maxH){
+          const r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);
+        }
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        const ctx=cv.getContext('2d');
+        try{ctx.drawImage(img,0,0,w,h);}catch(err){cb(reader.result);return;}
+        try{cb(cv.toDataURL('image/jpeg',0.7));}catch(err){cb(reader.result);}
+      };
+      img.onerror=()=>cb(reader.result);
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+  function render(){
+    const panel=document.getElementById('view-books');
+    panel.innerHTML=`
+      <div class="view-header"><h2>书海小藏</h2>
+        <button class="btn btn-primary btn-sm" id="book-add">＋ 新增书</button>
+      </div>
+      <div class="book-filter" id="book-filter">
+        <span class="bf ${currentFilter==='all'?'active':''}" data-f="all">全部</span>
+        ${(()=>{let s='';STATUSES.forEach(st=>{s+=`<span class="bf ${currentFilter===st.key?'active':''}" data-f="${st.key}">${st.label}</span>`;});return s;})()}
+      </div>
+      <div class="book-list" id="book-list"></div>
+      <div id="cover-zoom" class="cover-zoom"><img alt="书封大图"><div class="cz-actions"><button class="btn btn-ghost btn-sm" id="cz-change">换封面</button></div><span class="cz-tip">点击任意处关闭</span></div>`;
+    // 筛选切换
+    document.getElementById('book-filter').querySelectorAll('.bf').forEach(el=>{
+      el.addEventListener('click',()=>{currentFilter=el.dataset.f;render();});
+    });
+    document.getElementById('book-add').addEventListener('click',addBook);
+    // 封面放大层
+    const zoom=document.getElementById('cover-zoom');
+    zoom.addEventListener('click',e=>{
+      if(e.target.id==='cz-change')return;
+      zoom.classList.remove('show');
+    });
+    const czChange=document.getElementById('cz-change');
+    if(czChange)czChange.addEventListener('click',function(e){
+      e.stopPropagation();
+      const src=zoom.querySelector('img').src;
+      // 找到对应书的 cover-input 触发上传
+      const matchId=getList().find(b=>b.cover===src)?.id;
+      const inp=matchId?document.querySelector('.book-cover .cover-input[data-id="'+matchId+'"]'):null;
+      zoom.classList.remove('show');
+      if(inp)inp.click();
+    });
+    renderList();
+  }
+  function renderList(){
+    const el=document.getElementById('book-list');if(!el)return;
+    let list=getList();
+    if(currentFilter!=='all')list=list.filter(b=>b.status===currentFilter);
+    if(!list.length){
+      el.innerHTML=`<div class="empty-state" style="padding:20px">${currentFilter==='all'?'书架还空空如也，点击右上角「＋ 新增书」吧 📚':'该状态暂无书籍'}</div>`;
+      return;
+    }
+    el.innerHTML=list.map(b=>{
+      const status=STATUSES.find(s=>s.key===b.status)||STATUSES[2];
+      const stars=Array.from({length:5},(_,i)=>`<span class="book-star ${i<(b.stars||0)?'on':''}" data-id="${b.id}" data-v="${i+1}">★</span>`).join('');
+      const cover=b.cover?`<img src="${b.cover}" alt="封面">`:`<span class="cover-ph">📕</span>`;
+      return `<div class="book-card" data-id="${b.id}">
+        <div class="book-cover" data-id="${b.id}">
+          ${cover}
+          <span class="cover-upload">点击换图</span>
+          <input type="file" accept="image/*" class="cover-input" data-id="${b.id}" style="display:none">
+        </div>
+        <div class="book-main">
+          <div class="book-title-row">
+            <div style="flex:1;min-width:0">
+              <div class="book-title">${App.Utils.escapeHtml(b.title||'未命名')}</div>
+              ${b.author?`<div class="book-author">${App.Utils.escapeHtml(b.author)}</div>`:''}
+            </div>
+            <button class="btn-icon book-del" data-id="${b.id}" title="删除">×</button>
+          </div>
+          <div class="book-status-row">
+            ${STATUSES.map(s=>`<span class="book-status ${b.status===s.key?'active':''}" data-id="${b.id}" data-s="${s.key}">${s.label}</span>`).join('')}
+          </div>
+          <div class="book-stars" title="推荐星">${stars}</div>
+          <textarea class="book-note" data-id="${b.id}" placeholder="备注/读后感…">${App.Utils.escapeHtml(b.note||'')}</textarea>
+        </div>
+      </div>`;
+    }).join('');
+    bindEvents();
+  }
+  function bindEvents(){
+    // 封面上传 / 放大
+    document.querySelectorAll('#book-list .book-cover').forEach(c=>{
+      c.addEventListener('click',e=>{
+        if(e.target.classList.contains('cover-input'))return;
+        const id=c.dataset.id;const b=findBook(id);
+        if(b&&b.cover){
+          const zoom=document.getElementById('cover-zoom');
+          zoom.querySelector('img').src=b.cover;
+          zoom.classList.add('show');
+        }else{
+          const inp=c.querySelector('.cover-input');if(inp)inp.click();
+        }
+      });
+    });
+    document.querySelectorAll('#book-list .cover-input').forEach(inp=>{
+      inp.addEventListener('change',function(){
+        const f=this.files&&this.files[0];if(!f)return;
+        const id=this.dataset.id;
+        fileToDataURL(f,400,560,dataUrl=>{
+          updateBook(id,b=>{b.cover=dataUrl;});
+          renderList();
+        });
+        this.value='';
+      });
+    });
+    // 封面放大
+    document.querySelectorAll('#book-list .book-cover img').forEach(img=>{
+      img.addEventListener('click',e=>{
+        e.stopPropagation();
+        const zoom=document.getElementById('cover-zoom');
+        zoom.querySelector('img').src=img.src;
+        zoom.classList.add('show');
+      });
+    });
+    // 删除
+    document.querySelectorAll('#book-list .book-del').forEach(b=>{
+      b.addEventListener('click',function(){
+        const id=this.dataset.id;const bk=findBook(id);
+        const bkName=bk?bk.title:'该书';
+        if(!confirm('确定删除《'+bkName+'》吗？'))return;
+        saveList(getList().filter(x=>x.id!==id));renderList();
+      });
+    });
+    // 状态切换
+    document.querySelectorAll('#book-list .book-status').forEach(s=>{
+      s.addEventListener('click',function(){
+        const id=this.dataset.id,val=this.dataset.s;
+        updateBook(id,b=>{b.status=val;});renderList();
+      });
+    });
+    // 星级
+    document.querySelectorAll('#book-list .book-star').forEach(st=>{
+      st.addEventListener('click',function(e){
+        e.stopPropagation();
+        const id=this.dataset.id,v=+this.dataset.v;
+        updateBook(id,b=>{b.stars=(b.stars===v)?v-1:v;});renderList();
+      });
+    });
+    // 备注
+    document.querySelectorAll('#book-list .book-note').forEach(ta=>{
+      ta.addEventListener('blur',function(){
+        const id=this.dataset.id;updateBook(id,b=>{b.note=this.value;});
+      });
+    });
+  }
+  function addBook(){
+    App.openModal('新增书籍',`
+      <div class="form-row"><label>书名</label><input type="text" id="nb-title" placeholder="如：百年孤独"></div>
+      <div class="form-row"><label>作者（可选）</label><input type="text" id="nb-author" placeholder="如：马尔克斯"></div>
+      <div class="form-row"><label>初始状态</label>
+        <select id="nb-status">
+          ${STATUSES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-actions"><button class="btn btn-ghost" onclick="App.closeModal()">取消</button>
+        <button class="btn btn-primary" id="nb-save">保存</button></div>`);
+    document.getElementById('nb-save').addEventListener('click',()=>{
+      const title=document.getElementById('nb-title').value.trim();
+      if(!title){App.showToast('请填写书名');return;}
+      const author=document.getElementById('nb-author').value.trim();
+      const status=document.getElementById('nb-status').value;
+      const list=getList();
+      list.push({id:App.Utils.generateUUID(),title,author,status,stars:0,cover:'',note:'',createdAt:new Date().toISOString()});
+      saveList(list);
+      App.closeModal();
+      App.showToast('已加入书架 📚');
+      if(currentFilter!=='all'&&currentFilter!==status)currentFilter='all';
+      renderList();
+    });
+  }
+  function onShow(){renderList();}
+  return {render,onShow};
+})();
+
 (function(){
   function init(){
     // 检测 localStorage
