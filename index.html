@@ -336,8 +336,9 @@ details.card>.card-body{padding:0 14px 12px}
 .task-item .task-del{font-size:14px;color:var(--text-3);opacity:.5}
 .task-item .task-del:active{opacity:1;color:var(--danger)}
 .task-content{cursor:pointer}
-.task-priority-select{width:auto;min-width:72px}
+.task-priority-select{width:auto;min-width:64px;font-size:var(--f-xs);padding:3px 6px}
 .task-priority-select:disabled{opacity:.4}
+.task-input-group{flex:1;min-width:0;gap:6px}
 .task-priority{font-size:var(--f-xs);color:var(--danger);margin-left:4px}
 .task-section{margin-bottom:8px}
 .task-section-title{font-size:var(--f-xs);color:var(--text-3);margin:8px 4px 4px}
@@ -390,9 +391,12 @@ details.card>.card-body{padding:0 14px 12px}
 .habit-row-label{font-size:var(--f-sm);color:var(--text-2);font-weight:500;flex:1;text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 底部：体重 / 心情 */
 .habit-bottom-row{display:flex;align-items:center;gap:10px;min-height:32px;margin-top:8px}
+.habit-wm-row{display:flex;align-items:center;gap:18px;margin-top:10px}
+.habit-wm-item{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
 .habit-weight-wrap{display:flex;align-items:center;gap:4px}
-.habit-mood-select{flex:none;max-width:200px;font-size:var(--f-sm)}
+.habit-mood-select{flex:none;max-width:110px;font-size:var(--f-xs);padding:3px 6px}
 .habit-mood-color{width:16px;height:16px;border-radius:50%;border:1px solid var(--border);flex:none}
+.habit-manage-row{display:flex;justify-content:flex-end;margin-top:6px}
 .mood-note{width:100%;min-height:28px;font-size:var(--f-xs)}
 
 /* 月度统计热力图 */
@@ -579,6 +583,7 @@ details.card>.card-body{padding:0 14px 12px}
 .home-cover .hc-info{padding:8px 12px;display:flex;align-items:center;gap:8px}
 .home-cover .hc-text{flex:1;font-size:var(--f-md);color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .home-cover .hc-date{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0}
+.home-cover .hc-fallback{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0;background:var(--bg-soft);padding:2px 8px;border-radius:10px}
 .home-cover.hc-empty{background:linear-gradient(135deg,var(--bg-soft),var(--bg-card))}
 .home-cover.hc-empty .hc-ph{border:2px dashed var(--border);box-sizing:border-box;background:transparent;color:var(--text-3)}
 .home-cover.hc-empty .hc-text{color:var(--text-3)}
@@ -589,22 +594,20 @@ details.card>.card-body{padding:0 14px 12px}
 .moment-weekbar .mw-btn:active{transform:scale(.92)}
 .moment-weekbar .mw-range{flex:1;text-align:center;font-size:var(--f-md);font-weight:700}
 
-.moment-wall{display:flex;gap:10px;overflow-x:auto;padding:6px 0 10px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+.moment-wall{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 0 8px}
 .moment-wall::-webkit-scrollbar{display:none}
-.moment-plog-card{flex:0 0 150px;background:var(--bg-card);border-radius:var(--r-md);padding:10px;
-  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;scroll-snap-align:start;
-  border:2px solid transparent}
-.moment-plog-card.selected{border-color:var(--c-pink);box-shadow:0 0 0 2px rgba(245,204,215,.35)}
-.moment-plog-card .mp-title{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
-.moment-plog-card .mp-week{font-size:var(--f-lg);font-weight:700;color:var(--text);margin-bottom:2px}
-.moment-plog-card .mp-month{font-size:var(--f-xs);color:var(--text-3);margin-bottom:6px}
-.moment-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
-.moment-card-header .mp-dow{font-size:10px;color:var(--text-2);font-weight:700;letter-spacing:.5px}
-.moment-card-header .mp-num{width:24px;height:24px;border-radius:50%;background:var(--bg-soft);color:var(--text);font-size:var(--f-xs);display:flex;align-items:center;justify-content:center;font-weight:700}
-.moment-card-header .mp-num.today{background:var(--c-pink);color:var(--text)}
-.moment-card-photo{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--bg-soft);display:block}
-.moment-card-ph{width:100%;aspect-ratio:3/4;border-radius:8px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--text-3)}
-.moment-card-text{font-size:var(--f-xs);color:var(--text-2);line-height:1.3;max-height:34px;overflow:hidden}
+.moment-title-card{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border-radius:var(--r-md);padding:8px 12px;box-shadow:var(--shadow)}
+.moment-title-card .mp-title{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.moment-title-card .mp-week{font-size:var(--f-lg);font-weight:700;color:var(--text);margin-bottom:2px}
+.moment-title-card .mp-month{font-size:var(--f-xs);color:var(--text-3);margin-bottom:6px}
+.moment-day-cell{background:var(--bg-card);border-radius:var(--r-sm);padding:4px;display:flex;flex-direction:column;gap:3px;border:2px solid transparent;cursor:pointer;box-shadow:var(--shadow)}
+.moment-day-cell.selected{border-color:var(--c-pink);box-shadow:0 0 0 2px rgba(245,204,215,.35)}
+.moment-day-cell .mdc-head{display:flex;align-items:center;justify-content:space-between}
+.moment-day-cell .mp-dow{font-size:9px;color:var(--text-2);font-weight:700;letter-spacing:.5px}
+.moment-day-cell .mp-num{width:20px;height:20px;border-radius:50%;background:var(--bg-soft);color:var(--text);font-size:9px;display:flex;align-items:center;justify-content:center;font-weight:700}
+.moment-day-cell .mp-num.today{background:var(--c-pink);color:var(--text)}
+.moment-card-photo{width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:6px;background:var(--bg-soft);display:block}
+.moment-card-ph{width:100%;aspect-ratio:1/1;border-radius:6px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--text-3)}
 
 /* 迷你日历卡 */
 .moment-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:8px;margin-top:4px}
@@ -1392,23 +1395,34 @@ App.Modules.Home = (function(){
   // 首页封面：当日「每日一瞬」照片（上部约1/3）+ 心情文字 + 日期；无记录时显示引导卡
   function renderHomeCover(){
     const today=App.Utils.todayStr();
-    const m=App.Store.getMoment(today);
+    const todayM=App.Store.getMoment(today);
+    // 当天没拍照片时，回退到最近一天已上传的照片，直到当天更新为止
+    let srcM=todayM, fallbackDate=null;
+    if(!todayM || !todayM.photo){
+      const all=App.Store.getMomentAll();
+      const dates=Object.keys(all).filter(d=>d<today).sort().reverse();
+      for(const d of dates){
+        if(all[d] && all[d].photo){ srcM=all[d]; fallbackDate=d; break; }
+      }
+    }
     const d=new Date();
     const wd=['日','一','二','三','四','五','六'][d.getDay()];
     const dateLabel=`${d.getMonth()+1}月${d.getDate()}日 周${wd}`;
     let photo,text;
-    if(m){
-      photo=m.photo?`<img class="hc-photo" id="hc-photo" src="${m.photo}" alt="今日一瞬">`:`<div class="hc-ph">📸</div>`;
-      text=m.text?App.Utils.escapeHtml(m.text):'记录今日一瞬';
+    if(srcM && srcM.photo){
+      photo=`<img class="hc-photo" id="hc-photo" src="${srcM.photo}" alt="今日一瞬">`;
+      text=(todayM&&todayM.text)?App.Utils.escapeHtml(todayM.text):(srcM.text?App.Utils.escapeHtml(srcM.text):'记录今日一瞬');
     }else{
       photo=`<div class="hc-ph">📸</div>`;
       text='记录今天的一瞬';
     }
-    return `<div class="home-cover ${m?'':'hc-empty'}" id="home-cover">
+    const fallbackHint=fallbackDate?`<div class="hc-fallback">📷 ${fallbackDate.slice(5).replace('-','/')} 的一瞬</div>`:'';
+    return `<div class="home-cover ${srcM&&srcM.photo?'':'hc-empty'}" id="home-cover">
       ${photo}
       <div class="hc-info">
         <div class="hc-text">${text}</div>
         <div class="hc-date">${dateLabel}</div>
+        ${fallbackHint}
       </div>
     </div>`;
   }
@@ -2091,7 +2105,7 @@ App.Modules.Daily = (function(){
       <details class="card" open><summary>习惯打卡 <span class="count" id="habit-count">0/0</span></summary>
         <div class="card-body">
           <div class="habits-grid" id="habits-grid"></div>
-          <button class="btn btn-ghost btn-sm mt8" id="habit-manage">⚙ 管理习惯项目</button>
+          <div class="habit-manage-row"><button class="btn btn-ghost btn-sm" id="habit-manage">⚙ 管理习惯项目</button></div>
         </div>
       </details>
       <details class="card" open><summary>灵感速记 <span class="count" id="qn-count">0</span></summary>
@@ -2195,26 +2209,27 @@ App.Modules.Daily = (function(){
     }
     // 月历
     html+=renderCalendarHTML();
-    // 体重
+    // 体重 + 心情 同一排
     const weightRec=findH('weight');
-    html+=`<div class="habit-bottom-row">
-      <span class="habit-row-label">体重</span>
-      <div class="habit-weight-wrap">
-        <input type="number" id="habit-weight" class="habit-weight-input" placeholder="0" step="0.1" value="${weightRec?weightRec.value:''}"><span class="habit-unit">kg</span>
-      </div>
-    </div>`;
-    // 心情
     const moodRec=findH('mood');
     const moodColor=moodRec?getMoodColor(moodRec.mood):'';
-    html+=`<div class="habit-bottom-row">
-      <span class="habit-row-label">心情</span>
-      <select id="habit-mood" class="habit-mood-select">
-        <option value="">选择心情</option>
-        ${MOODS.map(m=>`<option value="${m.key}" ${moodRec&&moodRec.mood===m.key?'selected':''}>${m.label}</option>`).join('')}
-      </select>
-      ${moodColor?`<span class="habit-mood-color" style="background:${moodColor}"></span>`:''}
-    </div>
-    <div id="mood-note-wrap" style="${moodRec&&moodRec.mood?'display:flex':'display:none'};margin-top:8px">
+    html+=`<div class="habit-bottom-row habit-wm-row">
+      <div class="habit-wm-item">
+        <span class="habit-row-label">体重</span>
+        <div class="habit-weight-wrap">
+          <input type="number" id="habit-weight" class="habit-weight-input" placeholder="0" step="0.1" value="${weightRec?weightRec.value:''}"><span class="habit-unit">kg</span>
+        </div>
+      </div>
+      <div class="habit-wm-item">
+        <span class="habit-row-label">心情</span>
+        <select id="habit-mood" class="habit-mood-select">
+          <option value="">选择</option>
+          ${MOODS.map(m=>`<option value="${m.key}" ${moodRec&&moodRec.mood===m.key?'selected':''}>${m.label}</option>`).join('')}
+        </select>
+        ${moodColor?`<span class="habit-mood-color" style="background:${moodColor}"></span>`:''}
+      </div>
+    </div>`;
+    html+=`<div id="mood-note-wrap" style="${moodRec&&moodRec.mood?'display:flex':'display:none'};margin-top:8px">
       <input type="text" id="mood-note" placeholder="心情简短备注…" style="font-size:var(--f-xs);flex:1" value="${moodRec&&moodRec.moodNote?App.Utils.escapeHtml(moodRec.moodNote):''}">${App.speechBtnHTML('mood-note')}
     </div>`;
     grid.innerHTML=html;
@@ -3303,7 +3318,7 @@ App.Modules.Moment = (function(){
           <div class="mw-btn" id="m-thisweek" title="回到本周" style="font-size:13px">今</div>
         </div>
         <div class="moment-wall" id="m-wall"></div>
-        <div class="moment-hint">左右滑动查看整周，点卡片选定日期，点照片全屏放大</div>
+        <div class="moment-hint">照片墙展示整周一瞬，点照片全屏放大，点格子选定日期</div>
       </div>
       <div class="card moment-input">
         <div class="card-header"><h3>记录一瞬</h3></div>
@@ -3371,12 +3386,14 @@ App.Modules.Moment = (function(){
     if(rangeEl)rangeEl.textContent=`${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;
     const today=App.Utils.todayStr();
     const EN=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-    // 左侧迷你手帐卡 + 7 天卡片，横向滚动
+    // 标题手帐卡（整行）+ 7 天照片墙（4 列网格，2 行完整展示整周）
     let html='';
-    html+=`<div class="moment-plog-card" id="m-titlecard">
-      <div class="mp-title">Weekly plog</div>
-      <div class="mp-week">${ws.getFullYear()}</div>
-      <div class="mp-month">${ws.getMonth()+1}月 · 一瞬手帐</div>
+    html+=`<div class="moment-title-card" id="m-titlecard">
+      <div>
+        <div class="mp-title">Weekly plog</div>
+        <div class="mp-week">${ws.getFullYear()}</div>
+        <div class="mp-month">${ws.getMonth()+1}月 · 一瞬手帐</div>
+      </div>
       ${renderMiniCalendar(ws.getFullYear(),ws.getMonth(),all)}
     </div>`;
     for(let i=0;i<7;i++){
@@ -3386,18 +3403,16 @@ App.Modules.Moment = (function(){
       const isToday=ds===today;
       const isSelected=ds===selectedDate;
       const photo=rec&&rec.photo?`<img class="moment-card-photo" src="${rec.photo}" data-src="${rec.photo}">`:`<div class="moment-card-ph">📷</div>`;
-      const text=rec&&rec.text?App.Utils.escapeHtml(rec.text):'';
-      html+=`<div class="moment-plog-card ${isSelected?'selected':''}" data-date="${ds}">
-        <div class="moment-card-header">
+      html+=`<div class="moment-day-cell ${isSelected?'selected':''}" data-date="${ds}">
+        <div class="mdc-head">
           <span class="mp-dow">${EN[i]}</span>
           <span class="mp-num ${isToday?'today':''}">${d.getDate()}</span>
         </div>
         ${photo}
-        <div class="moment-card-text">${text}</div>
       </div>`;
     }
     wall.innerHTML=html;
-    wall.querySelectorAll('.moment-plog-card[data-date]').forEach(card=>{
+    wall.querySelectorAll('.moment-day-cell[data-date]').forEach(card=>{
       card.addEventListener('click',()=>{
         selectedDate=card.dataset.date;syncDateInput();renderWall();
         App.showToast('已选定 '+prettyDate(selectedDate));
@@ -3406,10 +3421,10 @@ App.Modules.Moment = (function(){
     wall.querySelectorAll('.moment-card-photo').forEach(img=>{
       img.addEventListener('click',e=>{e.stopPropagation();App.openLightbox(img.dataset.src);});
     });
-    // 自动滚动到选中的日期卡（当天）
-    const selCard=wall.querySelector('.moment-plog-card.selected');
+    // 照片墙为网格布局，所有格子均可见，无需滚动定位
+    const selCard=wall.querySelector('.moment-day-cell.selected');
     if(selCard){
-      setTimeout(()=>{selCard.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'});},30);
+      selCard.scrollIntoView({behavior:'auto',block:'nearest'});
     }
     wall.querySelectorAll('.moment-cal-grid .cal-day[data-date]').forEach(el=>{
       el.addEventListener('click',e=>{
@@ -3832,11 +3847,13 @@ App.Modules.Tasks = (function(){
       <div class="card">
         <div class="card-header"><h3>事项管理</h3><span class="count" id="task-count">0</span></div>
         <div class="card-body">
-          <div class="row wrap mb6">
-            <select id="task-type" style="width:auto;min-width:90px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
-            <select id="task-priority" class="task-priority-select" style="display:block"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select>
-            <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
-            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
+          <div class="row wrap mb6" style="gap:6px">
+            <select id="task-type" style="width:auto;min-width:78px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
+            <select id="task-priority" class="task-priority-select"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select>
+            <div class="row task-input-group">
+              <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
+              <button class="btn btn-primary btn-sm" id="task-add">＋</button>
+            </div>
           </div>
           <div class="tasks-list" id="task-list"></div>
         </div>
@@ -3853,7 +3870,7 @@ App.Modules.Tasks = (function(){
     App.bindSpeechBtns();
     document.getElementById('task-type').addEventListener('change',function(){
       const p=document.getElementById('task-priority');
-      if(p)p.style.display=this.value==='todo'?'block':'none';
+      if(p)p.style.display=this.value==='todo'?'':'none';
     });
     renderDay();
   }
