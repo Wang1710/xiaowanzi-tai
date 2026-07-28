@@ -1410,8 +1410,9 @@ App.Modules.Home = (function(){
     const dateLabel=`${d.getMonth()+1}月${d.getDate()}日 周${wd}`;
     let photo,text;
     if(srcM && srcM.photo){
+      // 文字与照片配套为同一天：始终取照片所在日期的文字
       photo=`<img class="hc-photo" id="hc-photo" src="${srcM.photo}" alt="今日一瞬">`;
-      text=(todayM&&todayM.text)?App.Utils.escapeHtml(todayM.text):(srcM.text?App.Utils.escapeHtml(srcM.text):'记录今日一瞬');
+      text=srcM.text?App.Utils.escapeHtml(srcM.text):'记录今日一瞬';
     }else{
       photo=`<div class="hc-ph">📸</div>`;
       text='记录今天的一瞬';
