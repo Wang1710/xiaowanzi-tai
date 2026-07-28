@@ -269,6 +269,10 @@ details.card>.card-body{padding:0 14px 12px}
 .home-task-check.todo-check{width:18px;height:18px;border:2px solid var(--text-3);border-radius:4px;color:#fff}
 .home-task-check.todo-check.checked{background:var(--c-green);border-color:var(--c-green)}
 .home-task-content{flex:1;font-size:var(--f-sm);word-break:break-word}
+.home-completed-section{margin-top:6px;border-top:1px dashed var(--border);padding-top:6px}
+.home-completed-toggle{display:flex;align-items:center;gap:4px;font-size:var(--f-xs);color:var(--text-3);cursor:pointer;padding:2px 0;user-select:none}
+.home-completed-body{display:none}
+.home-completed-section.open .home-completed-body{display:flex;flex-direction:column;gap:4px}
 
 /* ============ 物品小集 ============ */
 .items-list{display:flex;flex-direction:column;gap:8px}
@@ -1257,10 +1261,12 @@ App.Modules.Home = (function(){
       const el=document.getElementById('home-tasks');
       const countEl=document.getElementById('home-tasks-count');
       if(!el)return;
-      // 统计待办（未完成）
+      // 按类型和完成状态分组
+      const pending=tasks.filter(t=>!t.completed);
+      const done=tasks.filter(t=>t.completed);
+      // 统计
       const todoTotal=tasks.filter(t=>t.type==='todo').length;
       const todoDone=tasks.filter(t=>t.type==='todo'&&t.completed).length;
-      const todoLeft=todoTotal-todoDone;
       const remindTotal=tasks.filter(t=>t.type==='reminder').length;
       if(countEl){
         let label='';
@@ -1270,11 +1276,22 @@ App.Modules.Home = (function(){
         countEl.textContent=label;
       }
       if(!tasks.length){el.innerHTML='<div class="summary-empty">今日暂无事项 🌿</div>';return}
-      el.innerHTML=tasks.map(t=>`
+      // 渲染单项
+      const renderItem=t=>`
         <div class="home-task-item ${t.type} ${t.type==='todo'&&t.completed?'completed':''}" data-id="${t.id}">
           <span class="home-task-check ${t.type==='todo'?'todo-check':''} ${t.type==='todo'&&t.completed?'checked':''}">${t.type==='todo'?(t.completed?'✓':''):'📌'}</span>
           <span class="home-task-content">${App.Utils.escapeHtml(t.content)}</span>
-        </div>`).join('');
+        </div>`;
+      let html=pending.map(renderItem).join('');
+      // 已完成区域（折叠）
+      if(done.length){
+        html+=`<div class="home-completed-section" id="home-completed-sec">
+          <div class="home-completed-toggle">✅ 已完成 (${done.length}) <span style="margin-left:auto;font-size:10px">▸</span></div>
+          <div class="home-completed-body">${done.map(renderItem).join('')}</div>
+        </div>`;
+      }
+      el.innerHTML=html||'<div class="summary-empty">今日暂无事项 🌿</div>';
+      // 点击待办切换完成状态
       el.querySelectorAll('.home-task-item.todo').forEach(item=>item.addEventListener('click',()=>{
         const id=item.dataset.id;
         const en=App.Store.getDaily(today);
@@ -1283,6 +1300,9 @@ App.Modules.Home = (function(){
         App.Store.setDaily(today,en);
         renderHomeTasks();renderSummary();
       }));
+      // 已完成折叠/展开
+      const sec=document.getElementById('home-completed-sec');
+      if(sec)sec.querySelector('.home-completed-toggle').addEventListener('click',()=>sec.classList.toggle('open'));
     }catch(e){console.error('renderHomeTasks error',e)}
   }
   function initReportCard(){
