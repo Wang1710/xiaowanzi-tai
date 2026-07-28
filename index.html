@@ -443,25 +443,17 @@ details.card>.card-body{padding:0 14px 12px}
 .gantt-unified-header .gu-head-day.weekend{background:#f0e8e0}
 .gantt-unified-header .gu-head-day.today{background:#fff9c4;font-weight:700}
 .gantt-unified-body{position:relative}
-.gantt-week-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);min-height:64px}
+.gantt-week-row{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);min-height:64px;position:relative}
 .gantt-week-row:last-child{border-bottom:none}
-.gantt-week-row .gu-day-cell{border-right:1px solid var(--border);position:relative;min-height:64px;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start}
+.gantt-week-row .gu-day-cell{border-right:1px solid var(--border);position:relative;min-height:64px;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;padding-bottom:16px}
 .gantt-week-row .gu-day-cell.weekend{background:#f0e8e0}
 .gantt-week-row .gu-day-cell.today{background:#fff9c4}
 .gantt-week-row .gu-day-cell.empty{background:var(--bg-main)}
-.gantt-week-row .gu-day-cell .gu-day-num{position:absolute;top:3px;right:4px;font-size:11px;color:var(--text-3);line-height:1}
+.gantt-week-row .gu-day-cell .gu-day-num{position:absolute;top:3px;right:4px;font-size:11px;color:var(--text-3);line-height:1;z-index:2}
 .gantt-week-row .gu-day-cell .gu-day-num.today-num{color:var(--text);font-weight:700}
-/* 色块容器 - 从底部堆叠 */
-.gantt-week-row .gu-day-cell .gu-bars{position:absolute;bottom:0;left:0;right:0;display:flex;flex-direction:column-reverse;gap:1px;padding:1px 1px 2px}
-/* 单个色块 - 最多1/3高度，荧光浅色高亮 */
-.gantt-week-row .gu-day-cell .gu-bar-item{height:18px;border-radius:3px;margin:0 1px;font-size:7px;display:flex;align-items:center;justify-content:center;overflow:hidden;white-space:nowrap;position:relative}
-.gantt-week-row .gu-day-cell .gu-bar-item.fluoro{
-  background:color-mix(in srgb, var(--bc) 30%, #ffffff);
-  color:color-mix(in srgb, var(--bc) 75%, #000000);
-  border:1px solid color-mix(in srgb, var(--bc) 55%, #ffffff);
-  box-shadow:0 0 4px color-mix(in srgb, var(--bc) 45%, transparent), inset 0 0 2px rgba(255,255,255,.6);
-}
-.gantt-week-row .gu-day-cell .gu-bar-item .gu-start-dot{position:absolute;left:3px;top:50%;transform:translateY(-50%);font-size:7px;opacity:.7;color:#fff}
+/* 跨天色条：横跨整周网格的底部叠加层 */
+.gantt-week-row .gu-week-bars{position:absolute;bottom:3px;left:0;right:0;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 2px;z-index:1}
+.gantt-week-row .gu-track-bar{height:3px;border-radius:1.5px;align-self:center;opacity:.85}
 
 /* 项目图例 */
 .gantt-legend{display:flex;gap:8px;flex-wrap:wrap;font-size:var(--f-xs);margin-bottom:6px;margin-top:8px}
@@ -1748,10 +1740,10 @@ App.Modules.Projects = (function(){
         const dayNames=['一','二','三','四','五','六','日'];
         const isoDay=d=>{const wd=new Date(ganttYear,ganttMonth-1,d).getDay();return wd===0?7:wd};
 
-        // 为工作类项目生成不同深浅的蓝色
-        const workProjects=projects.filter(p=>p.category==='work');
+        // 项目颜色：用户自选 > 分类颜色 > 工作类蓝调色板
         const workBlues=['#4aa3e0','#5fb8e8','#7cc8f0','#38c2d6','#6aa8f0'];
         const getProjectColor=(p,pi)=>{
+          if(p.color) return p.color;
           if(p.category!=='work') return getCatColor(p.category);
           return workBlues[pi%workBlues.length];
         };
@@ -1770,13 +1762,50 @@ App.Modules.Projects = (function(){
         });
         html+=`</div>`;
 
-        // ===== 月历体（色块直接画在日期格子里） =====
+        const padBefore=firstDayWeek-1;
+
+        // ===== 预计算每个项目在本月的连续日期区间 =====
+        const projectBands=projects.map((p,pi)=>{
+          const color=getProjectColor(p,pi);
+          const days=new Set();
+          const addRange=(rs,re)=>{for(let dd=Math.max(1,rs);dd<=Math.min(daysInMonth,re);dd++)days.add(dd);};
+          let projStart=null,projEnd=null;
+          if(p.startDate){
+            const s=App.Utils.parseDate(p.startDate);
+            if(s){
+              const sy=s.getFullYear(),sm=s.getMonth()+1;
+              if(sy<ganttYear||(sy===ganttYear&&sm<ganttMonth)) projStart=1;
+              else if(sy===ganttYear&&sm===ganttMonth) projStart=s.getDate();
+            }
+          }
+          if(p.endDate){
+            const e=App.Utils.parseDate(p.endDate);
+            if(e){
+              const ey=e.getFullYear(),em=e.getMonth()+1;
+              if(ey>ganttYear||(ey===ganttYear&&em>ganttMonth)) projEnd=daysInMonth;
+              else if(ey===ganttYear&&em===ganttMonth) projEnd=e.getDate();
+            }
+          }
+          if(projStart&&projEnd) addRange(projStart,projEnd);
+          (p.tasks||[]).forEach(t=>{
+            if(!t.date)return;
+            const td=App.Utils.parseDate(t.date);
+            if(td&&td.getFullYear()===ganttYear&&td.getMonth()+1===ganttMonth) days.add(td.getDate());
+          });
+          const sorted=Array.from(days).sort((a,b)=>a-b);
+          const runs=[];let rs=null,re=null;
+          sorted.forEach(d=>{if(rs===null){rs=d;re=d;}else if(d===re+1){re=d;}else{runs.push([rs,re]);rs=d;re=d;}});
+          if(rs!==null)runs.push([rs,re]);
+          return {p,pi,color,runs};
+        });
+
+        // ===== 月历体：日期格子 + 跨周连续色条叠加层 =====
         html+=`<div class="gantt-unified-body">`;
         for(let w=0;w<weeks;w++){
           html+=`<div class="gantt-week-row">`;
           for(let d=0;d<7;d++){
             const cellIndex=w*7+d;
-            const dayOffset=cellIndex-(firstDayWeek-1);
+            const dayOffset=cellIndex-padBefore;
             const dayNum=dayOffset+1;
             const isValidDay=dayNum>=1&&dayNum<=daysInMonth;
             const ds=isValidDay?`${ganttYear}-${String(ganttMonth).padStart(2,'0')}-${String(dayNum).padStart(2,'0')}`:'';
@@ -1791,47 +1820,24 @@ App.Modules.Projects = (function(){
             let inner='';
             if(isValidDay){
               inner+=`<span class="gu-day-num ${isToday?'today-num':''}">${dayNum}</span>`;
-
-              // 收集这一天所有项目的色块
-              let bars=[];
-              projects.forEach((p,pi)=>{
-                const color=getProjectColor(p,pi);
-                let sd=null,ed=null;
-                if(p.startDate){
-                  const s=App.Utils.parseDate(p.startDate);
-                  if(s&&s.getFullYear()===ganttYear&&s.getMonth()+1===ganttMonth) sd=s.getDate();
-                }
-                if(p.endDate){
-                  const e=App.Utils.parseDate(p.endDate);
-                  if(e&&e.getFullYear()===ganttYear&&e.getMonth()+1===ganttMonth) ed=e.getDate();
-                }
-                const inRange=sd&&ed&&dayNum>=sd&&dayNum<=ed;
-                const task=(p.tasks||[]).find(t=>t.date===ds);
-                if(inRange||task){
-                  bars.push({color,isStart:dayNum===sd,title:p.title,task});
-                }
-              });
-
-              // 渲染色块
-              if(bars.length>0){
-                inner+=`<div class="gu-bars">`;
-                bars.forEach((bar,bi)=>{
-                  let barText='';
-                  let startMark='';
-                  if(bar.task){
-                    barText=bar.task.title.slice(0,2);
-                  }
-                  if(bar.isStart){
-                    startMark=`<span class="gu-start-dot">▶</span>`;
-                  }
-                  inner+=`<div class="gu-bar-item fluoro" style="--bc:${bar.color};${bar.task&&bar.task.completed?'opacity:.4':''}" title="${App.Utils.escapeHtml(bar.title)}">${startMark}${barText}</div>`;
-                });
-                inner+=`</div>`;
-              }
             }
-
             html+=`<div class="${cellClass}">${inner}</div>`;
           }
+
+          // 跨天色条：每个项目占一行，连续日期合并为一条
+          const weekFirstDay=w*7-padBefore+1;
+          html+=`<div class="gu-week-bars" style="grid-template-rows:repeat(${Math.max(1,projects.length)},3px)">`;
+          projectBands.forEach(band=>{
+            band.runs.forEach(([rs,re])=>{
+              const barStart=Math.max(rs,Math.max(1,weekFirstDay));
+              const barEnd=Math.min(re,Math.min(daysInMonth,weekFirstDay+6));
+              if(barStart>barEnd)return;
+              const cs=barStart-weekFirstDay+1;
+              const ce=barEnd-weekFirstDay+2;
+              html+=`<div class="gu-track-bar" style="grid-row:${band.pi+1};grid-column:${cs}/${ce};background:${band.color}" title="${App.Utils.escapeHtml(band.p.title)}"></div>`;
+            });
+          });
+          html+=`</div>`;
           html+=`</div>`;
         }
         html+=`</div></div>`;
@@ -1928,6 +1934,12 @@ App.Modules.Projects = (function(){
       <div class="form-row"><label>分类</label>
         <select id="p-cat">${getCats().map(c=>`<option value="${c.key}" ${p.category===c.key?'selected':''}>${c.label}</option>`).join('')}</select>
       </div>
+      <div class="form-row"><label>项目颜色</label>
+        <div class="row gap4" style="align-items:center">
+          <input type="color" id="p-color" value="${p.color || getCatColor(p.category)}" style="width:40px;height:34px;border:none;background:transparent">
+          <span class="fs-xs c-3">留空则跟随分类颜色</span>
+        </div>
+      </div>
       <div class="row gap8">
         <div class="flex1"><label>开始日期</label><input type="date" id="p-start" value="${p.startDate}"></div>
         <div class="flex1"><label>结束日期</label><input type="date" id="p-end" value="${p.endDate}"></div>
@@ -1966,6 +1978,7 @@ App.Modules.Projects = (function(){
       const data={
         title,
         category:document.getElementById('p-cat').value,
+        color:document.getElementById('p-color').value,
         startDate:document.getElementById('p-start').value,
         endDate:document.getElementById('p-end').value,
         description:document.getElementById('p-desc').value.trim(),
