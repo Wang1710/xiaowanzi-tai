@@ -23,6 +23,11 @@
 
   --c-pink:#f0c4c4;--c-blue:#c4d7f0;--c-green:#c4e0c4;--c-yellow:#f0e8c4;--c-purple:#d4c4e8;--c-orange:#f0d4c4;
 
+  --nav-bg-home:#7ba3d9;--nav-bg-items:#d4956f;--nav-bg-daily:#6db86d;
+  --nav-bg-projects:#a98cc8;--nav-bg-oils:#d98ca0;--nav-bg-inspiration:#c9a23a;
+  --nav-bg-profit:#c45b5b;--nav-bg-checklist:#7ba3d9;--nav-bg-books:#8a6db8;
+  --nav-bg-tasks:#5ab8b8;
+
   --text:#4a4a4a;
   --text-2:#8c8c8c;
   --text-3:#b8b8b8;
@@ -85,7 +90,7 @@ a{color:inherit;text-decoration:none}
   display:flex;align-items:center;justify-content:center;gap:8px;
   color:var(--text-2);transition:all .15s;flex-shrink:0;
 }
-.nav-short{font-size:var(--f-sm);font-weight:600;letter-spacing:1px;white-space:nowrap}
+.nav-short{font-size:var(--f-xs);font-weight:600;letter-spacing:1px;white-space:nowrap;display:inline-block;padding:3px 10px;border-radius:999px;line-height:1.4;color:#fff}
 #sidebar.expanded .nav-item{width:100%;justify-content:flex-start;padding:0 8px;height:46px;gap:8px}
 #sidebar.expanded .nav-short{display:none}
 .nav-item .nav-label{display:none;font-size:var(--f-md);white-space:nowrap;font-weight:500}
@@ -229,18 +234,19 @@ details.card>.card-body{padding:0 14px 12px}
 /* emoji 字体兜底 */
 .sidebar-footer,.weather-icon,.mood-btn{font-family:var(--emoji-font),var(--font)}
 
-.nav-item .nav-short{color:var(--text-2)}
-.nav-item.nav-home .nav-short{color:var(--c-blue)}
-.nav-item.nav-items .nav-short{color:var(--c-orange)}
-.nav-item.nav-daily .nav-short{color:var(--c-green)}
-.nav-item.nav-projects .nav-short{color:var(--c-purple)}
-.nav-item.nav-oils .nav-short{color:#d98ca0}
-.nav-item.nav-inspiration .nav-short{color:#c9a23a}
-.nav-item.nav-profit .nav-short{color:#c45b5b}
-.nav-item.nav-checklist .nav-short{color:var(--c-blue)}
-.nav-item.nav-books .nav-short{color:#8a6db8}
-.nav-item.active .nav-short{color:var(--text);font-weight:700}
-.nav-item.active{box-shadow:inset 3px 0 0 var(--c-purple)}
+.nav-item .nav-short{background:var(--nav-bg-home);color:#fff}
+.nav-item.nav-home .nav-short{background:var(--nav-bg-home)}
+.nav-item.nav-items .nav-short{background:var(--nav-bg-items)}
+.nav-item.nav-daily .nav-short{background:var(--nav-bg-daily)}
+.nav-item.nav-projects .nav-short{background:var(--nav-bg-projects)}
+.nav-item.nav-oils .nav-short{background:var(--nav-bg-oils)}
+.nav-item.nav-inspiration .nav-short{background:var(--nav-bg-inspiration)}
+.nav-item.nav-profit .nav-short{background:var(--nav-bg-profit)}
+.nav-item.nav-checklist .nav-short{background:var(--nav-bg-checklist)}
+.nav-item.nav-books .nav-short{background:var(--nav-bg-books)}
+.nav-item.nav-tasks .nav-short{background:var(--nav-bg-tasks)}
+.nav-item.active .nav-short{color:var(--text);background:rgba(0,0,0,.06);font-weight:700}
+.nav-item.active{box-shadow:none;background:transparent!important}
 
 /* ============ 首页 ============ */
 .weather-card .weather-header{display:flex;align-items:center;margin-bottom:8px}
