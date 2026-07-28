@@ -454,7 +454,7 @@ details.card>.card-body{padding:0 14px 12px}
 .gantt-week-row .gu-day-cell .gu-day-num.today-num{color:var(--text);font-weight:700}
 /* 跨天色条：横跨整周网格的底部叠加层 */
 .gantt-week-row .gu-week-bars{position:absolute;bottom:3px;left:0;right:0;display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 2px;z-index:1}
-.gantt-week-row .gu-track-bar{height:3px;border-radius:1.5px;align-self:center;opacity:.85}
+.gantt-week-row .gu-track-bar{height:6px;border-radius:3px;align-self:center;opacity:.9}
 
 /* 项目图例 */
 .gantt-legend{display:flex;gap:8px;flex-wrap:wrap;font-size:var(--f-xs);margin-bottom:6px;margin-top:8px}
@@ -1701,6 +1701,12 @@ App.Modules.Projects = (function(){
   }
   function getCatColor(k){const c=getCats().find(x=>x.key===k);return c?c.color:'#3a3a3a'}
   function getCatLabel(k){const c=getCats().find(x=>x.key===k);return c?c.label:k}
+  const workBlues=['#4aa3e0','#5fb8e8','#7cc8f0','#38c2d6','#6aa8f0'];
+  function getProjectColor(p,pi){
+    if(p.color) return p.color;
+    if(p.category!=='work') return getCatColor(p.category);
+    return workBlues[(pi||0)%workBlues.length];
+  }
   let ganttYear,ganttMonth;
   function render(){
     const now=new Date();ganttYear=now.getFullYear();ganttMonth=now.getMonth()+1;
@@ -1740,14 +1746,6 @@ App.Modules.Projects = (function(){
         const todayStr=App.Utils.todayStr();
         const dayNames=['一','二','三','四','五','六','日'];
         const isoDay=d=>{const wd=new Date(ganttYear,ganttMonth-1,d).getDay();return wd===0?7:wd};
-
-        // 项目颜色：用户自选 > 分类颜色 > 工作类蓝调色板
-        const workBlues=['#4aa3e0','#5fb8e8','#7cc8f0','#38c2d6','#6aa8f0'];
-        const getProjectColor=(p,pi)=>{
-          if(p.color) return p.color;
-          if(p.category!=='work') return getCatColor(p.category);
-          return workBlues[pi%workBlues.length];
-        };
 
         // 计算月历周数
         const firstDayWeek=isoDay(1);
@@ -1827,7 +1825,7 @@ App.Modules.Projects = (function(){
 
           // 跨天色条：每个项目占一行，连续日期合并为一条
           const weekFirstDay=w*7-padBefore+1;
-          html+=`<div class="gu-week-bars" style="grid-template-rows:repeat(${Math.max(1,projects.length)},3px)">`;
+          html+=`<div class="gu-week-bars" style="grid-template-rows:repeat(${Math.max(1,projects.length)},6px)">`;
           projectBands.forEach(band=>{
             band.runs.forEach(([rs,re])=>{
               const barStart=Math.max(rs,Math.max(1,weekFirstDay));
@@ -1863,13 +1861,14 @@ App.Modules.Projects = (function(){
     const archived=projects.filter(p=>p.status==='archived');
     if(!active.length){activeList.innerHTML='<div class="empty-state"><div class="es-icon">📊</div>暂无活跃项目</div>'}
     else{
-      activeList.innerHTML=active.map(p=>{
+      activeList.innerHTML=active.map((p,pi)=>{
+        const color=getProjectColor(p,pi);
         const end=App.Utils.parseDate(p.endDate);
         const days=end?Math.ceil((end-now)/86400000):null;
         const warn=days!==null&&days>=0&&days<=3;
-        return `<div class="project-card cat-${p.category}" data-id="${p.id}">
+        return `<div class="project-card cat-${p.category}" data-id="${p.id}" style="border-left-color:${color}">
           <div class="pc-top">
-            <span class="cat-dot" style="background:${getCatColor(p.category)}"></span>
+            <span class="cat-dot" style="background:${color}"></span>
             <span class="pc-title">${App.Utils.escapeHtml(p.title)}</span>
             ${warn?`<span class="pc-warn">⚠️ 剩${days}天</span>`:''}
             <button class="btn-icon proj-edit" data-id="${p.id}" style="width:28px;height:28px;font-size:13px">✏️</button>
@@ -1901,17 +1900,19 @@ App.Modules.Projects = (function(){
     }
     if(!archived.length){archivedList.innerHTML='<div class="empty-state" style="padding:12px">暂无归档项目</div>'}
     else{
-      archivedList.innerHTML=archived.map(p=>`
-        <div class="project-card cat-${p.category}" data-id="${p.id}">
+      archivedList.innerHTML=archived.map((p,pi)=>{
+        const color=getProjectColor(p,pi);
+        return `<div class="project-card cat-${p.category}" data-id="${p.id}" style="border-left-color:${color}">
           <div class="pc-top">
-            <span class="cat-dot" style="background:${getCatColor(p.category)}"></span>
+            <span class="cat-dot" style="background:${color}"></span>
             <span class="pc-title">${App.Utils.escapeHtml(p.title)}</span>
             <span class="badge badge-optional">已归档</span>
             <button class="btn-icon proj-restore" data-id="${p.id}" style="width:28px;height:28px;font-size:13px">↩️</button>
             <button class="btn-icon proj-del" data-id="${p.id}" style="width:28px;height:28px;font-size:13px">×</button>
           </div>
           <div class="pc-meta"><span>${p.startDate||'?'}</span>~<span>${p.endDate||'?'}</span></div>
-        </div>`).join('');
+        </div>`;
+      }).join('');
       archivedList.querySelectorAll('.proj-restore').forEach(b=>b.addEventListener('click',e=>{
         e.stopPropagation();const arr=App.Store.getProjects();const p=arr.find(x=>x.id===b.dataset.id);p.status='active';App.Store.setProjects(arr);
         renderGantt();renderList();App.showToast('已恢复');
