@@ -582,6 +582,9 @@ details.card>.card-body{padding:0 14px 12px}
 .home-cover .hc-info{padding:8px 12px;display:flex;align-items:center;gap:8px}
 .home-cover .hc-text{flex:1;font-size:var(--f-md);color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .home-cover .hc-date{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0}
+.home-cover.hc-empty{background:linear-gradient(135deg,var(--bg-soft),var(--bg-card))}
+.home-cover.hc-empty .hc-ph{border:2px dashed var(--border);box-sizing:border-box;background:transparent;color:var(--text-3)}
+.home-cover.hc-empty .hc-text{color:var(--text-3)}
 
 .moment-weekbar{display:flex;align-items:center;gap:6px;margin-bottom:8px}
 .moment-weekbar .mw-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-card);color:var(--text-2);
@@ -1334,20 +1337,12 @@ App.OCR = (function(){
 
 /* ============ 首页 Home ============ */
 App.Modules.Home = (function(){
-  let weatherCache=null;
   async function render(){
     try{
       const panel=document.getElementById('view-home');
       const settings=App.Store.getSettings();
       panel.innerHTML=`
         ${renderHomeCover()}
-        <div class="card weather-card" id="weather-card">
-          <div class="weather-header">
-            <span class="city-name" id="city-name">${App.Utils.escapeHtml(settings.city)}</span>
-            <button class="btn-text" id="change-city-btn">切换城市</button>
-          </div>
-          <div id="weather-body"><div class="weather-loading">天气加载中…</div></div>
-        </div>
         <div class="card summary-card" id="home-summary" ${settings.homeSummaryHidden?'style="display:none"':''}>
           <div class="card-header">
             <h3>今日摘要</h3>
@@ -1381,9 +1376,6 @@ App.Modules.Home = (function(){
           </div>
         </div>
       `;
-      // 天气
-      loadWeather(settings.city);
-      document.getElementById('change-city-btn').addEventListener('click',changeCity);
       // 摘要
       renderSummary();
       renderHomeTasks();
@@ -1400,57 +1392,41 @@ App.Modules.Home = (function(){
       if(panel)panel.innerHTML=`<div class="card"><div class="card-header"><h3>首页加载出错</h3></div><div class="card-body"><p style="font-size:var(--f-sm);color:var(--danger);margin-bottom:8px">请截图反馈：</p><pre style="white-space:pre-wrap;word-break:break-word;font-size:var(--f-xs);color:var(--text-2);background:var(--bg-main);padding:8px;border-radius:var(--r-sm)">${App.Utils.escapeHtml(err.message)}</pre><button class="btn btn-primary btn-sm mt8" onclick="location.reload()">刷新重试</button></div></div>`;
     }
   }
-  async function loadWeather(city){
-    const body=document.getElementById('weather-body');
-    try{
-      const w=await App.Weather.fetchWeather(city);
-      weatherCache=w;
-      body.innerHTML=`
-        <div class="weather-body">
-          <span class="weather-icon">${w.icon}</span>
-          <span class="weather-desc">${w.desc}</span>
-          <span class="weather-temp">${w.temp}</span>
-          <span class="weather-rain ${w.hasRain?'':'no-rain'}">${w.rain}</span>
-        </div>`;
-    }catch(e){
-      body.innerHTML=`<div class="weather-loading" style="color:var(--danger)">天气获取失败：${App.Utils.escapeHtml(e.message)}</div>`;
-    }
-  }
-  function changeCity(){
-    App.openModal('切换城市',`
-      <div class="form-row">
-        <label>城市名称</label>
-        <input type="text" id="new-city-input" placeholder="如：绍兴 / 杭州 / 上海" value="${App.Utils.escapeHtml(App.Store.getSettings().city)}">
-      </div>
-      <div class="form-actions">
-        <button class="btn btn-ghost" onclick="App.closeModal()">取消</button>
-        <button class="btn btn-primary" id="save-city-btn">保存</button>
-      </div>`);
-    document.getElementById('save-city-btn').addEventListener('click',()=>{
-      const c=document.getElementById('new-city-input').value.trim();
-      if(!c)return;
-      App.Store.setSettings({city:c});
-      App.closeModal();
-      document.getElementById('city-name').textContent=c;
-      loadWeather(c);
-    });
-  }
-  // 首页封面：当日「每日一瞬」照片（上部约1/3）+ 心情文字 + 日期
+  // 首页封面：当日「每日一瞬」照片（上部约1/3）+ 心情文字 + 日期；无记录时显示引导卡
   function renderHomeCover(){
     const today=App.Utils.todayStr();
     const m=App.Store.getMoment(today);
-    if(!m)return '';
     const d=new Date();
     const wd=['日','一','二','三','四','五','六'][d.getDay()];
-    const photo=m.photo?`<img class="hc-photo" id="hc-photo" src="${m.photo}" alt="今日一瞬">`:`<div class="hc-ph">📸</div>`;
-    const text=m.text?App.Utils.escapeHtml(m.text):'记录今日一瞬';
-    return `<div class="home-cover" id="home-cover">
+    const dateLabel=`${d.getMonth()+1}月${d.getDate()}日 周${wd}`;
+    let photo,text;
+    if(m){
+      photo=m.photo?`<img class="hc-photo" id="hc-photo" src="${m.photo}" alt="今日一瞬">`:`<div class="hc-ph">📸</div>`;
+      text=m.text?App.Utils.escapeHtml(m.text):'记录今日一瞬';
+    }else{
+      photo=`<div class="hc-ph">📸</div>`;
+      text='记录今天的一瞬';
+    }
+    return `<div class="home-cover ${m?'':'hc-empty'}" id="home-cover">
       ${photo}
       <div class="hc-info">
         <div class="hc-text">${text}</div>
-        <div class="hc-date">${d.getMonth()+1}月${d.getDate()}日 周${wd}</div>
+        <div class="hc-date">${dateLabel}</div>
       </div>
     </div>`;
+  }
+  // 仅刷新封面（导航回首页时 onShow 调用，避免整页重绘）
+  function refreshHomeCover(){
+    const panel=document.getElementById('view-home');
+    if(!panel)return;
+    const wrap=document.createElement('div');
+    wrap.innerHTML=renderHomeCover();
+    const newNode=wrap.firstElementChild;
+    const old=document.getElementById('home-cover');
+    if(newNode&&old)old.replaceWith(newNode);
+    else if(newNode&&!old)panel.insertBefore(newNode,panel.firstChild);
+    else if(old)old.remove();
+    bindHomeCover();
   }
   function bindHomeCover(){
     const c=document.getElementById('home-cover');
@@ -1609,7 +1585,7 @@ App.Modules.Home = (function(){
   }
   function moodName(m){return{relaxed:'舒心',plain:'平淡',tired:'疲惫',irritated:'烦躁',joyful:'愉悦'}[m]||m}
   function habitName(k){return{shampoo:'洗头',iron:'补铁维生素',reading:'阅读',weight:'体重',mood:'心情'}[k]||k}
-  function onShow(){renderHomeTasks();renderSummary();}
+  function onShow(){refreshHomeCover();renderHomeTasks();renderSummary();}
   App.renderReportToHTML=renderReportToHTML;
   return {render,onShow};
 })();
