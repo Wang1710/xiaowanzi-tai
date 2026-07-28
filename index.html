@@ -334,6 +334,18 @@ details.card>.card-body{padding:0 14px 12px}
 .task-item.reminder .task-content{color:var(--text-2)}
 .task-item .task-del{font-size:14px;color:var(--text-3);opacity:.5}
 .task-item .task-del:active{opacity:1;color:var(--danger)}
+.task-content{cursor:pointer}
+.task-priority-select{width:auto;min-width:72px}
+.task-priority-select:disabled{opacity:.4}
+.task-priority{font-size:var(--f-xs);color:var(--danger);margin-left:4px}
+.task-section{margin-bottom:8px}
+.task-section-title{font-size:var(--f-xs);color:var(--text-3);margin:8px 4px 4px}
+.tasks-completed-section{margin-top:8px;border-top:1px dashed var(--border);padding-top:6px}
+.tasks-completed-toggle{display:flex;align-items:center;gap:4px;font-size:var(--f-xs);color:var(--text-3);cursor:pointer;padding:2px 0;user-select:none}
+.tasks-completed-body{display:none;flex-direction:column;gap:4px}
+.tasks-completed-section.open .tasks-completed-body{display:flex}
+.tasks-completed-section .tasks-completed-toggle span{transition:transform .2s}
+.tasks-completed-section.open .tasks-completed-toggle span{transform:rotate(90deg)}
 
 .habits-grid{display:flex;flex-direction:column;gap:4px}
 .habit-tabs{display:flex;gap:6px;margin-bottom:6px}
@@ -4173,6 +4185,7 @@ App.Modules.Tasks = (function(){
         <div class="card-body">
           <div class="row wrap mb6">
             <select id="task-type" style="width:auto;min-width:90px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
+            <select id="task-priority" class="task-priority-select" style="display:block"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select>
             <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
             <button class="btn btn-primary btn-sm" id="task-add">＋</button>
           </div>
@@ -4189,6 +4202,10 @@ App.Modules.Tasks = (function(){
       if(e.target.id==='task-input'&&e.key==='Enter'){e.preventDefault();addTask()}
     });
     App.bindSpeechBtns();
+    document.getElementById('task-type').addEventListener('change',function(){
+      const p=document.getElementById('task-priority');
+      if(p)p.style.display=this.value==='todo'?'block':'none';
+    });
     renderDay();
   }
   function shiftDay(delta){
@@ -4200,27 +4217,78 @@ App.Modules.Tasks = (function(){
     renderTasks();
   }
   function renderTasks(){
-    const e=getEntry();const tasks=e.tasks||[];
+    const entry=getEntry();const tasks=entry.tasks||[];
     document.getElementById('task-count').textContent=tasks.length;
-    document.getElementById('task-list').innerHTML=tasks.map(t=>`
-      <div class="task-item ${t.type} ${t.type==='todo'&&t.completed?'completed':''}" data-id="${t.id}">
-        <span class="task-icon ${t.type==='todo'?'task-check':''} ${t.type==='todo'&&t.completed?'checked':''}">${t.type==='todo'?(t.completed?'✓':''):'📌'}</span>
-        <span class="task-content" ${t.type==='todo'?`style="cursor:pointer"`:''}>${App.Utils.escapeHtml(t.content)}</span>
+    const todos=tasks.filter(t=>t.type==='todo');
+    const reminders=tasks.filter(t=>t.type==='reminder');
+    const pending=todos.filter(t=>!t.completed).sort((a,b)=>(b.priority||0)-(a.priority||0));
+    const done=todos.filter(t=>t.completed);
+    function renderItem(t){
+      const isTodo=t.type==='todo';
+      const pri=['','❗','❗❗'][t.priority||0];
+      const check=isTodo?`<span class="task-icon task-check ${t.completed?'checked':''}" data-id="${t.id}">${t.completed?'✓':''}</span>`:`<span class="task-icon" data-id="${t.id}">📌</span>`;
+      return `<div class="task-item ${t.type} ${isTodo&&t.completed?'completed':''}" data-id="${t.id}">
+        ${check}
+        <span class="task-content" data-id="${t.id}">${App.Utils.escapeHtml(t.content)}${isTodo&&pri?`<span class="task-priority">${pri}</span>`:''}</span>
         <button class="btn-icon task-del" data-id="${t.id}" style="width:28px;height:28px;font-size:12px">×</button>
-      </div>`).join('')||'<div class="empty-state" style="padding:12px">暂无事项</div>';
-    document.querySelectorAll('#task-list .task-item.todo').forEach(el=>el.addEventListener('click',()=>{
-      const id=el.dataset.id;const e=getEntry();
-      const t=e.tasks.find(x=>x.id===id);t.completed=!t.completed;saveEntry(e);renderTasks();
+      </div>`;
+    }
+    let html='';
+    if(pending.length){
+      html+=`<div class="task-section"><div class="task-section-title">待办</div>${pending.map(renderItem).join('')}</div>`;
+    }
+    if(reminders.length){
+      html+=`<div class="task-section"><div class="task-section-title">提醒</div>${reminders.map(renderItem).join('')}</div>`;
+    }
+    if(done.length){
+      html+=`<div class="tasks-completed-section" id="tasks-completed-sec">
+        <div class="tasks-completed-toggle">✅ 已完成 (${done.length}) <span style="margin-left:auto;font-size:10px">▸</span></div>
+        <div class="tasks-completed-body">${done.map(renderItem).join('')}</div>
+      </div>`;
+    }
+    if(!tasks.length) html='<div class="empty-state" style="padding:12px">暂无事项</div>';
+    document.getElementById('task-list').innerHTML=html;
+    bindTaskEvents();
+  }
+  function bindTaskEvents(){
+    document.querySelectorAll('#task-list .task-check').forEach(el=>el.addEventListener('click',e=>{
+      e.stopPropagation();
+      const id=el.dataset.id;const entry=getEntry();
+      const t=entry.tasks.find(x=>x.id===id);if(!t)return;
+      t.completed=!t.completed;saveEntry(entry);renderTasks();
+    }));
+    document.querySelectorAll('#task-list .task-content').forEach(el=>el.addEventListener('click',e=>{
+      e.stopPropagation();editTask(el.dataset.id);
     }));
     document.querySelectorAll('#task-list .task-del').forEach(b=>b.addEventListener('click',e=>{
-      e.stopPropagation();const en=getEntry();en.tasks=en.tasks.filter(x=>x.id!==b.dataset.id);saveEntry(en);renderTasks();
+      e.stopPropagation();const entry=getEntry();entry.tasks=entry.tasks.filter(x=>x.id!==b.dataset.id);saveEntry(entry);renderTasks();
     }));
+    const sec=document.getElementById('tasks-completed-sec');
+    if(sec)sec.querySelector('.tasks-completed-toggle').addEventListener('click',()=>sec.classList.toggle('open'));
+  }
+  function editTask(id){
+    const entry=getEntry();const t=entry.tasks.find(x=>x.id===id);if(!t)return;
+    const priOptions=t.type==='todo'?`<div class="form-row"><label>重要程度</label><select id="edit-task-priority"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select></div>`:'';
+    App.openModal('编辑事项',`
+      <div class="form-row"><label>内容</label><input type="text" id="edit-task-content" value="${App.Utils.escapeHtml(t.content)}"></div>
+      ${priOptions}
+      <div class="form-actions"><button class="btn btn-ghost" onclick="App.closeModal()">取消</button><button class="btn btn-primary" id="edit-task-save">保存</button></div>`);
+    if(t.type==='todo')document.getElementById('edit-task-priority').value=t.priority||0;
+    document.getElementById('edit-task-save').addEventListener('click',()=>{
+      const nv=document.getElementById('edit-task-content').value.trim();
+      if(!nv){App.showToast('内容不能为空');return;}
+      t.content=nv;
+      if(t.type==='todo')t.priority=+document.getElementById('edit-task-priority').value;
+      saveEntry(entry);App.closeModal();renderTasks();App.showToast('已更新');
+    });
   }
   function addTask(){
     const input=document.getElementById('task-input');const v=input.value.trim();if(!v)return;
     const type=document.getElementById('task-type').value;
+    const priorityEl=document.getElementById('task-priority');
+    const priority=type==='todo'&&priorityEl?+priorityEl.value:0;
     const e=getEntry();e.tasks=e.tasks||[];
-    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,createdAt:new Date().toISOString()});
+    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,priority,createdAt:new Date().toISOString()});
     saveEntry(e);input.value='';renderTasks();
   }
   function onShow(){renderDay();}
