@@ -572,6 +572,59 @@ details.card>.card-body{padding:0 14px 12px}
 .fs-xs{font-size:var(--f-xs)}.fs-sm{font-size:var(--f-sm)}
 .c-2{color:var(--text-2)}.c-3{color:var(--text-3)}
 .gap4{gap:4px}.gap6{gap:6px}.gap8{gap:8px}
+
+/* ============ 每日一瞬 Moment ============ */
+.home-cover{position:relative;width:100%;border-radius:var(--r-lg);overflow:hidden;background:var(--bg-card);
+  box-shadow:var(--shadow);display:flex;flex-direction:column;margin-bottom:10px;cursor:pointer}
+.home-cover .hc-photo{width:100%;height:33vh;min-height:190px;object-fit:cover;display:block;background:var(--bg-soft)}
+.home-cover .hc-ph{width:100%;height:33vh;min-height:190px;display:flex;align-items:center;justify-content:center;
+  font-size:40px;color:var(--text-3);background:var(--bg-soft)}
+.home-cover .hc-info{padding:8px 12px;display:flex;align-items:center;gap:8px}
+.home-cover .hc-text{flex:1;font-size:var(--f-md);color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-cover .hc-date{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0}
+
+.moment-weekbar{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.moment-weekbar .mw-btn{width:34px;height:34px;border-radius:50%;background:var(--bg-card);color:var(--text-2);
+  display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:var(--shadow)}
+.moment-weekbar .mw-btn:active{transform:scale(.92)}
+.moment-weekbar .mw-range{flex:1;text-align:center;font-size:var(--f-md);font-weight:600}
+
+.moment-wall{display:flex;gap:10px;overflow-x:auto;padding:6px 0 10px;-webkit-overflow-scrolling:touch;scroll-snap-type:x mandatory}
+.moment-wall::-webkit-scrollbar{display:none}
+.moment-plog-card{flex:0 0 150px;background:var(--bg-card);border-radius:var(--r-md);padding:10px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;gap:6px;scroll-snap-align:start;
+  border:2px solid transparent}
+.moment-plog-card.selected{border-color:var(--c-purple);box-shadow:0 0 0 2px rgba(176,141,85,.15)}
+.moment-plog-card .mp-title{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.moment-plog-card .mp-week{font-size:var(--f-lg);font-weight:600;color:var(--text);margin-bottom:2px}
+.moment-plog-card .mp-month{font-size:var(--f-xs);color:var(--text-3);margin-bottom:6px}
+.moment-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:2px}
+.moment-card-header .mp-dow{font-size:10px;color:#b08d55;font-weight:600;letter-spacing:.5px}
+.moment-card-header .mp-num{width:24px;height:24px;border-radius:50%;background:var(--bg-soft);color:var(--text);font-size:var(--f-xs);display:flex;align-items:center;justify-content:center;font-weight:600}
+.moment-card-header .mp-num.today{background:#b08d55;color:#fff}
+.moment-card-photo{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--bg-soft);display:block}
+.moment-card-ph{width:100%;aspect-ratio:3/4;border-radius:8px;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--text-3)}
+.moment-card-text{font-size:var(--f-xs);color:var(--text-2);line-height:1.3;max-height:34px;overflow:hidden}
+
+/* 迷你日历卡 */
+.moment-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center;font-size:8px;margin-top:4px}
+.moment-cal-grid .cal-dow{color:var(--text-3);font-size:7px}
+.moment-cal-grid .cal-day{padding:2px 0;border-radius:50%;color:var(--text)}
+.moment-cal-grid .cal-day.other{color:var(--text-3);opacity:.6}
+.moment-cal-grid .cal-day.has{background:#b08d55;color:#fff}
+.moment-cal-grid .cal-day.today{box-shadow:inset 0 0 0 1px #b08d55}
+
+.moment-input .mi-photo{width:64px;height:64px;object-fit:cover;border-radius:var(--r-md);background:var(--bg-soft);display:block}
+.moment-input .mi-ph{width:64px;height:64px;border-radius:var(--r-md);background:var(--bg-soft);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--text-3)}
+.moment-input textarea{min-height:66px}
+.moment-hint{font-size:var(--f-xs);color:var(--text-3);margin:2px 0 6px}
+
+/* 全局图片放大层 */
+.img-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;
+  justify-content:center;flex-direction:column;z-index:500}
+.img-lightbox.show{display:flex}
+.img-lightbox img{max-width:92%;max-height:82%;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+.img-lightbox .il-tip{position:absolute;bottom:24px;color:#fff;font-size:var(--f-xs);opacity:.8}
 </style>
 </head>
 <body>
@@ -596,6 +649,7 @@ details.card>.card-body{padding:0 14px 12px}
       <section id="view-home" class="view-panel"></section>
       <section id="view-items" class="view-panel"></section>
       <section id="view-daily" class="view-panel"></section>
+      <section id="view-moment" class="view-panel"></section>
       <section id="view-projects" class="view-panel"></section>
       <section id="view-oils" class="view-panel"></section>
       <section id="view-inspiration" class="view-panel"></section>
@@ -614,6 +668,7 @@ details.card>.card-body{padding:0 14px 12px}
 
 <div id="toast-container"></div>
 <div id="speech-indicator">🎤 录音中…</div>
+<div id="img-lightbox" class="img-lightbox"><img alt="预览大图"><span class="il-tip">点击任意处关闭</span></div>
 
 <script>
 window.__errs=[];
@@ -694,13 +749,25 @@ App.confirmModal = function(msg,onOk){
     <button class="btn btn-danger" id="confirm-ok-btn">确定</button></div>`);
   document.getElementById('confirm-ok-btn').onclick=()=>{App.closeModal();onOk()};
 };
+// 全局图片放大层（全屏预览）
+App.openLightbox = function(src){
+  const lb=document.getElementById('img-lightbox');
+  if(!lb||!src)return;
+  lb.querySelector('img').src=src;
+  lb.classList.add('show');
+};
+App.closeLightbox = function(){
+  const lb=document.getElementById('img-lightbox');
+  if(lb)lb.classList.remove('show');
+};
 
 /* ============ App.Store ============ */
 App.Store = (function(){
   const KEYS={
     items:'mj_items',daily:'mj_daily',projects:'mj_projects',oils:'mj_oils',
     inspiration:'mj_inspiration',profit:'mj_profit',checklists:'mj_checklists',
-    settings:'mj_settings',reports:'mj_monthly_reports',books:'mj_books'
+    settings:'mj_settings',reports:'mj_monthly_reports',books:'mj_books',
+    moment:'mj_moment'
   };
   function read(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
   function write(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true}catch(e){App.showToast('存储失败，可能空间不足');return false}}
@@ -744,6 +811,18 @@ App.Store = (function(){
   // books
   function getBooks(){return read(KEYS.books,[])}
   function setBooks(arr){write(KEYS.books,arr)}
+
+  // moment（每日一瞬）
+  function getMomentAll(){return read(KEYS.moment,{})}
+  function setMomentAll(obj){write(KEYS.moment,obj)}
+  function getMoment(date){const all=getMomentAll();return all[date]||null}
+  function setMoment(date,rec){
+    const all=getMomentAll();
+    all[date]=Object.assign(all[date]||{},rec,{date,updatedAt:new Date().toISOString()});
+    if(!all[date].createdAt)all[date].createdAt=all[date].updatedAt;
+    write(KEYS.moment,all);
+    return all[date];
+  }
 
   // reports
   function getReports(){return read(KEYS.reports,[])}
@@ -806,6 +885,13 @@ App.Store = (function(){
     getBooks().forEach(b=>{
       const txt=`${b.title||''} ${(b.author||'')} ${b.status||''} ${(b.note||'')}`;
       if(txt.toLowerCase().includes(q))pushRes('书海小藏',b.id,`${b.title||''} ${b.status||''}`,'');
+    });
+    // moment（每日一瞬）
+    const momentAll=getMomentAll();
+    Object.keys(momentAll).forEach(date=>{
+      const m=momentAll[date];
+      const txt=`${m.text||''}`;
+      if(txt.toLowerCase().includes(q))pushRes('每日一瞬',date,`${date} ${(m.text||'').slice(0,40)}`,date);
     });
     return results;
   }
@@ -889,6 +975,7 @@ App.Store = (function(){
     getProfitAll,getProfit,setProfit,
     getChecklists,setChecklists,
     getBooks,setBooks,
+    getMomentAll,setMomentAll,getMoment,setMoment,
     getReports,setReports,
     exportAll,importAll,
     searchAll,getTodaySummary,generateMonthlyReport,
@@ -1115,6 +1202,7 @@ App.Router = (function(){
     {view:'home',icon:'🏠',label:'首页',short:'首页'},
     {view:'tasks',icon:'📋',label:'事项管理',short:'事项'},
     {view:'daily',icon:'📝',label:'每日小事',short:'每日'},
+    {view:'moment',icon:'📸',label:'每日一瞬',short:'一瞬'},
     {view:'projects',icon:'📊',label:'项目小栏',short:'项目'},
     {view:'profit',icon:'📈',label:'盈亏管理',short:'盈亏'}
   ];
@@ -1252,6 +1340,7 @@ App.Modules.Home = (function(){
       const panel=document.getElementById('view-home');
       const settings=App.Store.getSettings();
       panel.innerHTML=`
+        ${renderHomeCover()}
         <div class="card weather-card" id="weather-card">
           <div class="weather-header">
             <span class="city-name" id="city-name">${App.Utils.escapeHtml(settings.city)}</span>
@@ -1298,6 +1387,7 @@ App.Modules.Home = (function(){
       // 摘要
       renderSummary();
       renderHomeTasks();
+      bindHomeCover();
       document.getElementById('hide-summary-btn').addEventListener('click',()=>{
         App.Store.setSettings({homeSummaryHidden:true});
         document.getElementById('home-summary').style.display='none';
@@ -1343,6 +1433,32 @@ App.Modules.Home = (function(){
       App.closeModal();
       document.getElementById('city-name').textContent=c;
       loadWeather(c);
+    });
+  }
+  // 首页封面：当日「每日一瞬」照片（上部约1/3）+ 心情文字 + 日期
+  function renderHomeCover(){
+    const today=App.Utils.todayStr();
+    const m=App.Store.getMoment(today);
+    if(!m)return '';
+    const d=new Date();
+    const wd=['日','一','二','三','四','五','六'][d.getDay()];
+    const photo=m.photo?`<img class="hc-photo" id="hc-photo" src="${m.photo}" alt="今日一瞬">`:`<div class="hc-ph">📸</div>`;
+    const text=m.text?App.Utils.escapeHtml(m.text):'记录今日一瞬';
+    return `<div class="home-cover" id="home-cover">
+      ${photo}
+      <div class="hc-info">
+        <div class="hc-text">${text}</div>
+        <div class="hc-date">${d.getMonth()+1}月${d.getDate()}日 周${wd}</div>
+      </div>
+    </div>`;
+  }
+  function bindHomeCover(){
+    const c=document.getElementById('home-cover');
+    if(!c)return;
+    c.addEventListener('click',()=>{
+      const img=c.querySelector('#hc-photo');
+      if(img)App.openLightbox(img.src);
+      else App.Router.navigate('moment');
     });
   }
   function renderSummary(){
@@ -3508,6 +3624,239 @@ App.Modules.Checklist = (function(){
   return {render};
 })();
 
+/* ============ 每日一瞬 Moment ============ */
+App.Modules.Moment = (function(){
+  const WEEK=['日','一','二','三','四','五','六'];
+  let weekStart=null;     // 当前显示周的周一
+  let selectedDate=App.Utils.todayStr();
+
+  function parseDate(s){return App.Utils.parseDate(s)}
+  function fmtDate(d){return App.Utils.formatDate(d)}
+  function mondayOf(d){ // 返回含 d 的那一周的周一
+    const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());
+    const day=x.getDay(); // 0=周日..6=周六
+    const diff=(day===0)?-6:(1-day);
+    x.setDate(x.getDate()+diff);
+    return x;
+  }
+  function prettyDate(s){
+    const d=parseDate(s);if(!d)return s;
+    return `${d.getMonth()+1}月${d.getDate()}日 周${WEEK[d.getDay()]}`;
+  }
+  // 图片压缩为 dataURL（限制尺寸，减小 localStorage 体积）
+  function fileToDataURL(file,maxW,maxH,cb){
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxW||h>maxH){const r=Math.min(maxW/w,maxH/h);w=Math.round(w*r);h=Math.round(h*r);}
+        const cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        const ctx=cv.getContext('2d');
+        try{ctx.drawImage(img,0,0,w,h);}catch(err){cb(reader.result);return;}
+        try{cb(cv.toDataURL('image/jpeg',0.72));}catch(err){cb(reader.result);}
+      };
+      img.onerror=()=>cb(reader.result);
+      img.src=reader.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function render(){
+    if(!weekStart)weekStart=mondayOf(new Date());
+    const panel=document.getElementById('view-moment');
+    panel.innerHTML=`
+      <div class="view-header"><h2>📸 每日一瞬</h2></div>
+      <div class="card">
+        <div class="moment-weekbar">
+          <div class="mw-btn" id="m-prev" title="上一周">‹</div>
+          <div class="mw-range" id="m-range"></div>
+          <div class="mw-btn" id="m-next" title="下一周">›</div>
+          <div class="mw-btn" id="m-thisweek" title="回到本周" style="font-size:13px">今</div>
+        </div>
+        <div class="moment-wall" id="m-wall"></div>
+        <div class="moment-hint">左右滑动查看整周，点卡片选定日期，点照片全屏放大</div>
+      </div>
+      <div class="card moment-input">
+        <div class="card-header"><h3>记录一瞬</h3></div>
+        <div class="form-row">
+          <label>日期</label>
+          <input type="date" id="m-date" class="inp" value="${selectedDate}">
+        </div>
+        <div class="form-row">
+          <label>照片</label>
+          <div class="row gap8">
+            <div id="m-photo-prev" class="mi-ph">📷</div>
+            <div class="row col flex1">
+              <input type="file" id="m-photo" accept="image/*" style="font-size:var(--f-sm)">
+              <span class="moment-hint">提交前请确认日期已选定</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-row">
+          <label>心情文字</label>
+          <textarea id="m-text" placeholder="今天的一瞬，想说的话…"></textarea>
+        </div>
+        <div class="row gap8">
+          <button class="btn btn-primary flex1" id="m-save">保存今日一瞬</button>
+          <button class="btn btn-ghost" id="m-export">导出图文</button>
+        </div>
+      </div>`;
+    bindWeekNav();
+    bindInput();
+    renderWall();
+  }
+
+  function bindWeekNav(){
+    document.getElementById('m-prev').addEventListener('click',()=>{weekStart.setDate(weekStart.getDate()-7);renderWall();});
+    document.getElementById('m-next').addEventListener('click',()=>{weekStart.setDate(weekStart.getDate()+7);renderWall();});
+    document.getElementById('m-thisweek').addEventListener('click',()=>{weekStart=mondayOf(new Date());selectedDate=App.Utils.todayStr();syncDateInput();renderWall();});
+  }
+
+  function bindInput(){
+    const dateEl=document.getElementById('m-date');
+    dateEl.addEventListener('change',()=>{selectedDate=dateEl.value||App.Utils.todayStr();renderWall();});
+    const photoEl=document.getElementById('m-photo');
+    const prev=document.getElementById('m-photo-prev');
+    photoEl.addEventListener('change',function(){
+      const f=this.files&&this.files[0];
+      if(!f)return;
+      fileToDataURL(f,1080,1080,dataUrl=>{prev.innerHTML=`<img class="mi-photo" src="${dataUrl}">`;prev.dataset.preview=dataUrl;});
+      this.value='';
+    });
+    document.getElementById('m-save').addEventListener('click',saveRecord);
+    document.getElementById('m-export').addEventListener('click',exportAll);
+  }
+
+  function syncDateInput(){
+    const el=document.getElementById('m-date');
+    if(el)el.value=selectedDate;
+  }
+
+  function renderWall(){
+    const all=App.Store.getMomentAll();
+    const wall=document.getElementById('m-wall');
+    if(!wall)return;
+    const ws=weekStart;
+    const we=new Date(ws);we.setDate(we.getDate()+6);
+    const rangeEl=document.getElementById('m-range');
+    if(rangeEl)rangeEl.textContent=`${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;
+    const today=App.Utils.todayStr();
+    const EN=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
+    // 左侧迷你手帐卡 + 7 天卡片，横向滚动
+    let html='';
+    html+=`<div class="moment-plog-card" id="m-titlecard">
+      <div class="mp-title">Weekly plog</div>
+      <div class="mp-week">${ws.getFullYear()}</div>
+      <div class="mp-month">${ws.getMonth()+1}月 · 一瞬手帐</div>
+      ${renderMiniCalendar(ws.getFullYear(),ws.getMonth(),all)}
+    </div>`;
+    for(let i=0;i<7;i++){
+      const d=new Date(ws);d.setDate(d.getDate()+i);
+      const ds=fmtDate(d);
+      const rec=all[ds];
+      const isToday=ds===today;
+      const isSelected=ds===selectedDate;
+      const photo=rec&&rec.photo?`<img class="moment-card-photo" src="${rec.photo}" data-src="${rec.photo}">`:`<div class="moment-card-ph">📷</div>`;
+      const text=rec&&rec.text?App.Utils.escapeHtml(rec.text):'';
+      html+=`<div class="moment-plog-card ${isSelected?'selected':''}" data-date="${ds}">
+        <div class="moment-card-header">
+          <span class="mp-dow">${EN[i]}</span>
+          <span class="mp-num ${isToday?'today':''}">${d.getDate()}</span>
+        </div>
+        ${photo}
+        <div class="moment-card-text">${text}</div>
+      </div>`;
+    }
+    wall.innerHTML=html;
+    wall.querySelectorAll('.moment-plog-card[data-date]').forEach(card=>{
+      card.addEventListener('click',()=>{
+        selectedDate=card.dataset.date;syncDateInput();renderWall();
+        App.showToast('已选定 '+prettyDate(selectedDate));
+      });
+    });
+    wall.querySelectorAll('.moment-card-photo').forEach(img=>{
+      img.addEventListener('click',e=>{e.stopPropagation();App.openLightbox(img.dataset.src);});
+    });
+    // 自动滚动到选中的日期卡（当天）
+    const selCard=wall.querySelector('.moment-plog-card.selected');
+    if(selCard){
+      setTimeout(()=>{selCard.scrollIntoView({behavior:'auto',inline:'center',block:'nearest'});},30);
+    }
+    wall.querySelectorAll('.moment-cal-grid .cal-day[data-date]').forEach(el=>{
+      el.addEventListener('click',e=>{
+        e.stopPropagation();
+        const ds=el.dataset.date;if(!ds)return;
+        selectedDate=ds;
+        const d=parseDate(ds);if(!d)return;
+        weekStart=mondayOf(d);
+        syncDateInput();renderWall();
+      });
+    });
+  }
+
+  function renderMiniCalendar(year,month,all){
+    const first=new Date(year,month,1);
+    const start=new Date(first);start.setDate(start.getDate()-(first.getDay()||7)+1); // 周一开头
+    const today=App.Utils.todayStr();
+    const DOW=['一','二','三','四','五','六','日'];
+    let html='<div class="moment-cal-grid">';
+    DOW.forEach(d=>html+=`<div class="cal-dow">${d}</div>`);
+    for(let w=0;w<6;w++){
+      for(let d=0;d<7;d++){
+        const cell=new Date(start);cell.setDate(start.getDate()+w*7+d);
+        const ds=fmtDate(cell);
+        const inMonth=cell.getMonth()===month;
+        const has=all[ds];
+        const isToday=ds===today;
+        html+=`<div class="cal-day ${inMonth?'':'other'} ${has?'has':''} ${isToday?'today':''}" data-date="${ds}">${cell.getDate()}</div>`;
+      }
+    }
+    html+='</div>';
+    return html;
+  }
+
+  function saveRecord(){
+    const dateEl=document.getElementById('m-date');
+    const ds=dateEl.value||selectedDate;
+    if(!ds){App.showToast('请先选择日期');return;}
+    selectedDate=ds;
+    const text=document.getElementById('m-text').value.trim();
+    const prev=document.getElementById('m-photo-prev');
+    const photo=prev.dataset.preview||'';
+    if(!text&&!photo){App.showToast('请上传照片或输入心情文字');return;}
+    if(photo){
+      App.Store.setMoment(ds,{photo,text});
+    }else{
+      const existing=App.Store.getMoment(ds)||{};
+      App.Store.setMoment(ds,{photo:existing.photo||'',text});
+    }
+    App.showToast('已保存 '+prettyDate(ds)+'，已同步到首页封面');
+    prev.innerHTML='📷';delete prev.dataset.preview;
+    document.getElementById('m-text').value='';
+    if(App.Router.getCurrentView()==='moment')renderWall();
+    // 双向同步：刷新首页封面
+    if(App.Modules.Home&&App.Router.getCurrentView()==='home')App.Modules.Home.render();
+  }
+
+  function exportAll(){
+    const all=App.Store.getMomentAll();
+    const keys=Object.keys(all);
+    if(!keys.length){App.showToast('还没有任何一瞬记录');return;}
+    const data={_app:'xiaowanzi-moment',_version:1,_exportedAt:new Date().toISOString(),records:all};
+    const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=`每日一瞬_图文_${App.Utils.todayStr()}.json`;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(()=>URL.revokeObjectURL(url),1000);
+    App.showToast('已导出 '+keys.length+' 条图文');
+  }
+
+  function onShow(){ if(!weekStart)weekStart=mondayOf(new Date()); renderWall(); }
+  return {render,onShow};
+})();
+
 /* ============ 设置 Settings ============ */
 App.Modules.Settings = (function(){
   function open(){
@@ -3578,7 +3927,7 @@ App.Modules.Settings = (function(){
     const clearModules=[
       {key:'items',name:'物品'},{key:'oils',name:'精油'},{key:'inspiration',name:'灵感'},
       {key:'checklists',name:'清单'},{key:'books',name:'书海'},{key:'daily',name:'每日'},
-      {key:'projects',name:'项目'},{key:'profit',name:'盈亏'}
+      {key:'projects',name:'项目'},{key:'profit',name:'盈亏'},{key:'moment',name:'一瞬'}
     ];
     const clearBox=document.getElementById('set-clear-modules');
     clearBox.innerHTML=clearModules.map(m=>`<button class="btn btn-ghost btn-sm" data-clr="${m.key}">清${m.name}</button>`).join('')
@@ -3586,7 +3935,7 @@ App.Modules.Settings = (function(){
     clearBox.querySelectorAll('[data-clr]').forEach(btn=>{
       btn.addEventListener('click',()=>{
         const key=btn.dataset.clr;
-        const map={items:'物品',oils:'精油',inspiration:'灵感',checklists:'清单',books:'书海',daily:'每日记录',tasks:'事项',projects:'项目',profit:'盈亏'};
+        const map={items:'物品',oils:'精油',inspiration:'灵感',checklists:'清单',books:'书海',daily:'每日记录',tasks:'事项',projects:'项目',profit:'盈亏',moment:'每日一瞬'};
         if(!confirm('确定清空【'+map[key]+'】的全部数据吗？此操作不可恢复。'))return;
         if(key==='tasks'){
           // 事项数据分散在每日记录里，逐日清空 tasks 数组
@@ -3936,6 +4285,9 @@ App.Modules.Tasks = (function(){
       else App.Router.expandSidebar();
     });
     document.getElementById('sidebar-overlay').addEventListener('click',App.Router.collapseSidebar);
+    // 全局图片放大层：点击任意处关闭
+    const imgLb=document.getElementById('img-lightbox');
+    if(imgLb)imgLb.addEventListener('click',App.closeLightbox);
     // 设置按钮
     document.getElementById('settings-btn').addEventListener('click',()=>{
       if(App.Modules.Settings)App.Modules.Settings.open();
@@ -3972,9 +4324,9 @@ App.Modules.Tasks = (function(){
             const idx=+el.dataset.idx;
             const r=list[idx];
             // 跳转到对应模块
-            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·事项':'daily','每日小事·心情':'daily','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','灵感·翻译':'inspiration','盈亏管理':'profit','清单小盒':'checklist'};
+            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·事项':'daily','每日小事·心情':'daily','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','灵感·翻译':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment'};
             const base=r.module.split('·')[0];
-            const view={物品小集:'items',每日小事:'daily',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist'}[base]||'home';
+            const view={物品小集:'items',每日小事:'daily',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment'}[base]||'home';
             App.Router.navigate(view);
             results.classList.remove('visible');input.value='';
           });
