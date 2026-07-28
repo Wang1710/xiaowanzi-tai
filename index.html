@@ -279,16 +279,17 @@ details.card>.card-body{padding:0 14px 12px}
 .book-filter .bf{flex:none;padding:4px 12px;border-radius:14px;background:var(--bg-card);border:1px solid var(--border);font-size:var(--f-sm);cursor:pointer;white-space:nowrap}
 .book-filter .bf.active{background:var(--c-orange);color:#fff;border-color:var(--c-orange)}
 .book-list{display:flex;flex-direction:column;gap:10px}
-.book-card{display:flex;gap:10px;background:var(--bg-card);border-radius:var(--r-md);padding:10px;box-shadow:var(--shadow);border:1px solid rgba(224,216,208,.4)}
-.book-cover{flex:none;width:60px;height:84px;border-radius:6px;overflow:hidden;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:1px dashed var(--border)}
+.book-card{background:var(--bg-card);border-radius:var(--r-md);padding:10px;box-shadow:var(--shadow);border:1px solid rgba(224,216,208,.4)}
+.book-card-top{display:flex;gap:10px}
+.book-cover{flex:none;width:64px;height:92px;border-radius:6px;overflow:hidden;background:var(--bg-soft);display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;border:1px dashed var(--border)}
 .book-cover img{width:100%;height:100%;object-fit:cover;display:block}
 .book-cover .cover-ph{font-size:22px;color:var(--text-3)}
 .book-cover .cover-upload{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;background:rgba(0,0,0,.35);opacity:0;transition:opacity .15s;pointer-events:none}
 .book-cover:hover .cover-upload{opacity:1}
-.book-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.book-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
 .book-title-row{display:flex;align-items:flex-start;gap:6px}
 .book-title{flex:1;font-size:var(--f-md);font-weight:600;word-break:break-word}
-.book-author{font-size:var(--f-xs);color:var(--text-3);margin-top:2px}
+.book-author{font-size:var(--f-xs);color:var(--text-3);margin-top:1px}
 .book-del{flex:none;width:28px;height:28px;font-size:14px}
 .book-status-row{display:flex;gap:4px;flex-wrap:wrap}
 .book-status{flex:none;padding:2px 8px;border-radius:10px;font-size:var(--f-xs);border:1px solid var(--border);background:var(--bg-main);cursor:pointer}
@@ -297,7 +298,7 @@ details.card>.card-body{padding:0 14px 12px}
 .book-star{cursor:pointer;color:var(--border);line-height:1;transition:transform .1s}
 .book-star.on{color:#f5b50a}
 .book-star:active{transform:scale(1.2)}
-.book-note{width:100%;font-size:var(--f-xs);resize:vertical;min-height:34px}
+.book-note{width:100%;font-size:var(--f-xs);resize:vertical;min-height:34px;margin-top:8px}
 .cover-zoom{position:fixed;inset:0;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;z-index:400}
 .cover-zoom.show{display:flex}
 .cover-zoom img{max-width:90%;max-height:85%;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
@@ -3457,25 +3458,27 @@ App.Modules.Books = (function(){
       const stars=Array.from({length:5},(_,i)=>`<span class="book-star ${i<(b.stars||0)?'on':''}" data-id="${b.id}" data-v="${i+1}">★</span>`).join('');
       const cover=b.cover?`<img src="${b.cover}" alt="封面">`:`<span class="cover-ph">📕</span>`;
       return `<div class="book-card" data-id="${b.id}">
-        <div class="book-cover" data-id="${b.id}">
-          ${cover}
-          <span class="cover-upload">点击换图</span>
-          <input type="file" accept="image/*" class="cover-input" data-id="${b.id}" style="display:none">
-        </div>
-        <div class="book-main">
-          <div class="book-title-row">
-            <div style="flex:1;min-width:0">
-              <div class="book-title">${App.Utils.escapeHtml(b.title||'未命名')}</div>
-              ${b.author?`<div class="book-author">${App.Utils.escapeHtml(b.author)}</div>`:''}
+        <div class="book-card-top">
+          <div class="book-cover" data-id="${b.id}">
+            ${cover}
+            <span class="cover-upload">点击换图</span>
+            <input type="file" accept="image/*" class="cover-input" data-id="${b.id}" style="display:none">
+          </div>
+          <div class="book-main">
+            <div class="book-title-row">
+              <div style="flex:1;min-width:0">
+                <div class="book-title">${App.Utils.escapeHtml(b.title||'未命名')}</div>
+                ${b.author?`<div class="book-author">${App.Utils.escapeHtml(b.author)}</div>`:''}
+              </div>
+              <button class="btn-icon book-del" data-id="${b.id}" title="删除">×</button>
             </div>
-            <button class="btn-icon book-del" data-id="${b.id}" title="删除">×</button>
+            <div class="book-status-row">
+              ${STATUSES.map(s=>`<span class="book-status ${b.status===s.key?'active':''}" data-id="${b.id}" data-s="${s.key}">${s.label}</span>`).join('')}
+            </div>
+            <div class="book-stars" title="推荐星">${stars}</div>
           </div>
-          <div class="book-status-row">
-            ${STATUSES.map(s=>`<span class="book-status ${b.status===s.key?'active':''}" data-id="${b.id}" data-s="${s.key}">${s.label}</span>`).join('')}
-          </div>
-          <div class="book-stars" title="推荐星">${stars}</div>
-          <textarea class="book-note" data-id="${b.id}" placeholder="备注/读后感…">${App.Utils.escapeHtml(b.note||'')}</textarea>
         </div>
+        <textarea class="book-note" data-id="${b.id}" placeholder="备注/读后感…">${App.Utils.escapeHtml(b.note||'')}</textarea>
       </div>`;
     }).join('');
     bindEvents();
