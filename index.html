@@ -336,6 +336,14 @@ body.view-books{--bg-main:#f5f2ff;--bg-soft:#ede6ff}
 .task-item .task-del{font-size:14px;color:var(--text-3);opacity:.5}
 .task-item .task-del:active{opacity:1;color:var(--danger)}
 .task-content{cursor:pointer}
+.task-item.completed .task-icon.task-check{background:var(--c-green);border-color:var(--c-green)}
+.task-item.completed .task-content{text-decoration:line-through;color:var(--text-3)}
+.task-due{display:inline-block;margin-left:6px;font-size:var(--f-xs);color:var(--text-3);background:var(--bg-main);border-radius:var(--r-sm);padding:1px 5px}
+.task-due.overdue{color:var(--danger);background:rgba(214,69,69,.1)}
+.home-task-due{display:inline-block;margin-left:6px;font-size:var(--f-xs);color:var(--text-3)}
+.home-task-due.overdue{color:var(--danger)}
+.toggle-inline{display:inline-flex;align-items:center;gap:4px;font-size:var(--f-xs);color:var(--text-2);cursor:pointer;user-select:none}
+.toggle-inline input{width:15px;height:15px;accent-color:var(--c-green)}
 .task-priority-select,.task-category-select{width:auto;min-width:66px;font-size:var(--f-sm);padding:6px 8px;height:36px;box-sizing:border-box}
 .task-priority-select:disabled{opacity:.4}
 .task-input-group{display:flex;align-items:center;gap:6px}
@@ -704,6 +712,12 @@ App.Utils = (function(){
   }
   function parseDate(s){const d=new Date(s);return isNaN(d)?null:d}
   function todayStr(){return formatDate(new Date())}
+  function isOverdue(dueDate){
+    if(!dueDate)return false;
+    const d=parseDate(dueDate);if(!d)return false;
+    const today=parseDate(todayStr());
+    return d<today;
+  }
   function escapeHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function debounce(fn,wait){let t;return function(){clearTimeout(t);const args=arguments,ctx=this;t=setTimeout(()=>fn.apply(ctx,args),wait||200)}}
   function loadScript(src){
@@ -736,7 +750,7 @@ App.Utils = (function(){
   }
   const WEEK=['日','一','二','三','四','五','六'];
   function weekStr(d){return WEEK[(d||new Date()).getDay()]}
-  return {generateUUID,formatDate,parseDate,todayStr,escapeHtml,debounce,loadScript,exportCSV,weekStr};
+  return {generateUUID,formatDate,parseDate,todayStr,escapeHtml,debounce,loadScript,exportCSV,weekStr,isOverdue};
 })();
 
 /* ============ App.showToast / openModal / closeModal ============ */
@@ -778,7 +792,7 @@ App.Store = (function(){
     items:'mj_items',daily:'mj_daily',projects:'mj_projects',oils:'mj_oils',
     inspiration:'mj_inspiration',profit:'mj_profit',checklists:'mj_checklists',
     settings:'mj_settings',reports:'mj_monthly_reports',books:'mj_books',
-    moment:'mj_moment'
+    moment:'mj_moment',tasks:'mj_tasks'
   };
   function read(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
   function write(key,val){try{localStorage.setItem(key,JSON.stringify(val));if(App.Cloud&&App.Cloud.schedulePush)App.Cloud.schedulePush();return true}catch(e){App.showToast('存储失败，可能空间不足');return false}}
@@ -792,6 +806,27 @@ App.Store = (function(){
   // items
   function getItems(){return read(KEYS.items,[])}
   function setItems(arr){write(KEYS.items,arr)}
+
+  // tasks（扁平表，不绑录入日期；事项管理 / 每日小事 共用，带截止日期 dueDate）
+  function getTasks(){return read(KEYS.tasks,[])}
+  function setTasks(arr){write(KEYS.tasks,arr)}
+  // 迁移：把散落在 mj_daily[日期].tasks 里的待办/提醒合并进扁平表（去重），并从 daily 中清除，避免重复
+  function migrateTasks(){
+    const all=getDailyAll();let moved=0;const seen={};
+    const cur=getTasks();cur.forEach(t=>{if(t&&t.id)seen[t.id]=true;});
+    const out=cur.slice();
+    Object.keys(all).forEach(date=>{
+      const e=all[date];if(!e||!e.tasks)return;
+      const keep=[];
+      (e.tasks||[]).forEach(t=>{
+        if(t&&(t.type==='todo'||t.type==='reminder')){
+          if(!seen[t.id]){seen[t.id]=true;out.push(Object.assign({dueDate:''},t));moved++;}
+        }else{keep.push(t);}
+      });
+      e.tasks=keep;
+    });
+    if(moved){setTasks(out);write(KEYS.daily,all);}
+  }
 
   // daily
   function getDailyAll(){return read(KEYS.daily,{})}
@@ -861,8 +896,12 @@ App.Store = (function(){
     Object.keys(daily).forEach(date=>{
       const e=daily[date];
       (e.quickNotes||[]).forEach(n=>{if((n.content||'').toLowerCase().includes(q))pushRes('每日小事·速记',n.id,`${date} ${n.content}`,date)});
-      (e.tasks||[]).forEach(t=>{if((t.content||'').toLowerCase().includes(q))pushRes('每日小事·事项',t.id,`${date} ${t.content}`,date)});
       (e.habits||[]).forEach(h=>{if((h.moodNote||'').toLowerCase().includes(q))pushRes('每日小事·心情',h.id,`${date} ${h.moodNote}`,date)});
+    });
+    // tasks（扁平表，已与日期解耦）
+    getTasks().forEach(t=>{
+      const ctx=t.dueDate?`截止 ${t.dueDate}`:'';
+      if((t.content||'').toLowerCase().includes(q))pushRes('事项管理',t.id,`${ctx} ${t.content}`.trim(),t.id);
     });
     // projects
     getProjects().forEach(p=>{
@@ -910,7 +949,8 @@ App.Store = (function(){
   function getTodaySummary(){
     const today=todayStr();
     const d=getDaily(today);
-    const todos=(d.tasks||[]).filter(t=>t.type==='todo'&&!t.completed).length;
+    const allTasks=getTasks();
+    const todos=allTasks.filter(t=>t.type==='todo'&&!t.completed).length;
     const habitKeys=['weight','shampoo','iron','reading','mood'];
     const doneKeys=(d.habits||[]).map(h=>h.habitKey);
     const pendingHabits=habitKeys.filter(k=>!doneKeys.includes(k)).length;
@@ -932,14 +972,15 @@ App.Store = (function(){
     const daysInMonth=new Date(year,month,0).getDate();
     const daily=getDailyAll();
     const reflections={quickNotes:[],moodNotes:[],completedTodos:0,totalTodos:0,reminders:0};
+    // 待办/提醒改为扁平表统计（全量，不按日期）
+    getTasks().forEach(t=>{
+      if(t.type==='todo'){reflections.totalTodos++;if(t.completed)reflections.completedTodos++}
+      else if(t.type==='reminder')reflections.reminders++;
+    });
     for(let d=1;d<=daysInMonth;d++){
       const ds=`${ym}-${String(d).padStart(2,'0')}`;
       const e=daily[ds];if(!e)continue;
       (e.quickNotes||[]).forEach(n=>{if(n.content)reflections.quickNotes.push({date:ds,content:n.content})});
-      (e.tasks||[]).forEach(t=>{
-        if(t.type==='todo'){reflections.totalTodos++;if(t.completed)reflections.completedTodos++}
-        else if(t.type==='reminder')reflections.reminders++;
-      });
       const moodRec=(e.habits||[]).find(h=>h.habitKey==='mood');
       if(moodRec&&moodRec.mood){reflections.moodNotes.push({date:ds,mood:moodRec.mood,note:moodRec.moodNote||''});}
     }
@@ -978,6 +1019,7 @@ App.Store = (function(){
   return {
     KEYS,getSettings,setSettings,
     getItems,setItems,
+    getTasks,setTasks,migrateTasks,
     getDailyAll,getDaily,setDaily,
     getProjects,setProjects,
     getOils,setOils,
@@ -1508,15 +1550,15 @@ App.Modules.Home = (function(){
   }
   function renderHomeTasks(){
     try{
-      const today=App.Utils.todayStr();
-      const e=App.Store.getDaily(today);
-      const tasks=e.tasks||[];
       const el=document.getElementById('home-tasks');
       const countEl=document.getElementById('home-tasks-count');
       if(!el)return;
-      // 按类型和完成状态分组
-      const pending=tasks.filter(t=>!t.completed);
-      const done=tasks.filter(t=>t.completed);
+      const tasks=App.Store.getTasks();
+      // 排序：有截止日期的在前并按日期升序，其余按创建时间
+      const sortKey=t=>(t.dueDate||'9999-99-99')+'|'+(t.createdAt||'');
+      const sorted=tasks.slice().sort((a,b)=>sortKey(a)<sortKey(b)?-1:1);
+      const pending=sorted.filter(t=>!t.completed);
+      const done=sorted.filter(t=>t.completed);
       // 统计
       const todoTotal=tasks.filter(t=>t.type==='todo').length;
       const todoDone=tasks.filter(t=>t.type==='todo'&&t.completed).length;
@@ -1528,13 +1570,17 @@ App.Modules.Home = (function(){
         if(!label) label='0 项';
         countEl.textContent=label;
       }
-      if(!tasks.length){el.innerHTML='<div class="summary-empty">今日暂无事项 🌿</div>';return}
+      if(!tasks.length){el.innerHTML='<div class="summary-empty">还没有待办事项 🌿</div>';return}
       // 渲染单项
-      const renderItem=t=>`
+      const renderItem=t=>{
+        const due=t.dueDate?`<span class="home-task-due ${App.Utils.isOverdue(t.dueDate)?'overdue':''}">📅${t.dueDate}</span>`:'';
+        return `
         <div class="home-task-item ${t.type} ${t.type==='todo'&&t.completed?'completed':''}" data-id="${t.id}">
           <span class="home-task-check ${t.type==='todo'?'todo-check':''} ${t.type==='todo'&&t.completed?'checked':''}">${t.type==='todo'?(t.completed?'✓':''):'📌'}</span>
           <span class="home-task-content">${App.Utils.escapeHtml(t.content)}</span>
+          ${due}
         </div>`;
+      };
       let html=pending.map(renderItem).join('');
       // 已完成区域（折叠）
       if(done.length){
@@ -1543,14 +1589,14 @@ App.Modules.Home = (function(){
           <div class="home-completed-body">${done.map(renderItem).join('')}</div>
         </div>`;
       }
-      el.innerHTML=html||'<div class="summary-empty">今日暂无事项 🌿</div>';
-      // 点击待办切换完成状态
-      el.querySelectorAll('.home-task-item.todo').forEach(item=>item.addEventListener('click',()=>{
+      el.innerHTML=html||'<div class="summary-empty">还没有待办事项 🌿</div>';
+      // 点击待办/提醒切换完成状态
+      el.querySelectorAll('.home-task-item').forEach(item=>item.addEventListener('click',()=>{
         const id=item.dataset.id;
-        const en=App.Store.getDaily(today);
-        const t=en.tasks.find(x=>x.id===id);if(!t)return;
+        const all=App.Store.getTasks();
+        const t=all.find(x=>x.id===id);if(!t)return;
         t.completed=!t.completed;
-        App.Store.setDaily(today,en);
+        App.Store.setTasks(all);
         renderHomeTasks();renderSummary();
       }));
       // 已完成折叠/展开
@@ -2197,30 +2243,6 @@ App.Modules.Daily = (function(){
     const e=getEntry();e.quickNotes=e.quickNotes||[];e.quickNotes.push({id:App.Utils.generateUUID(),content:v,createdAt:new Date().toISOString()});
     saveEntry(e);input.value='';renderQuickNotes();
   }
-  function renderTasks(){
-    const e=getEntry();const tasks=e.tasks||[];
-    document.getElementById('task-count').textContent=tasks.length;
-    document.getElementById('task-list').innerHTML=tasks.map(t=>`
-      <div class="task-item ${t.type} ${t.type==='todo'&&t.completed?'completed':''}" data-id="${t.id}">
-        <span class="task-icon ${t.type==='todo'?'task-check':''} ${t.type==='todo'&&t.completed?'checked':''}">${t.type==='todo'?(t.completed?'✓':''):'📌'}</span>
-        <span class="task-content" ${t.type==='todo'?`style="cursor:pointer"`:''}>${App.Utils.escapeHtml(t.content)}</span>
-        <button class="btn-icon task-del" data-id="${t.id}" style="width:28px;height:28px;font-size:12px">×</button>
-      </div>`).join('')||'<div class="empty-state" style="padding:12px">暂无事项</div>';
-    document.querySelectorAll('.task-item.todo').forEach(el=>el.addEventListener('click',()=>{
-      const id=el.dataset.id;const e=getEntry();
-      const t=e.tasks.find(x=>x.id===id);t.completed=!t.completed;saveEntry(e);renderTasks();
-    }));
-    document.querySelectorAll('.task-del').forEach(b=>b.addEventListener('click',e=>{
-      e.stopPropagation();const en=getEntry();en.tasks=en.tasks.filter(x=>x.id!==b.dataset.id);saveEntry(en);renderTasks();
-    }));
-  }
-  function addTask(){
-    const input=document.getElementById('task-input');const v=input.value.trim();if(!v)return;
-    const type=document.getElementById('task-type').value;
-    const e=getEntry();e.tasks=e.tasks||[];
-    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,createdAt:new Date().toISOString()});
-    saveEntry(e);input.value='';renderTasks();
-  }
   function renderHabits(){
     const entry=getEntry();const habits=entry.habits||[];
     const findH=k=>habits.find(h=>h.habitKey===k);
@@ -2432,16 +2454,13 @@ App.Modules.Daily = (function(){
     const y=d.getFullYear(),m=d.getMonth()+1;
     const ym=`${y}-${String(m).padStart(2,'0')}`;
     const dailyAll=App.Store.getDailyAll();
-    const reflections={quickNotes:[],moodNotes:[],completedTodos:0,totalTodos:0,reminders:0};
+    const allTasks=App.Store.getTasks();
+    const reflections={quickNotes:[],moodNotes:[],completedTodos:allTasks.filter(t=>t.type==='todo'&&t.completed).length,totalTodos:allTasks.filter(t=>t.type==='todo').length,reminders:allTasks.filter(t=>t.type==='reminder').length};
     const daysInMonth=new Date(y,m,0).getDate();
     for(let day=1;day<=daysInMonth;day++){
       const ds=`${ym}-${String(day).padStart(2,'0')}`;
       const e=dailyAll[ds];if(!e)continue;
       (e.quickNotes||[]).forEach(n=>{if(n.content)reflections.quickNotes.push({date:ds,content:n.content})});
-      (e.tasks||[]).forEach(t=>{
-        if(t.type==='todo'){reflections.totalTodos++;if(t.completed)reflections.completedTodos++}
-        else if(t.type==='reminder')reflections.reminders++;
-      });
       const moodRec=(e.habits||[]).find(h=>h.habitKey==='mood');
       if(moodRec&&moodRec.mood){reflections.moodNotes.push({date:ds,mood:moodRec.mood,note:moodRec.moodNote||''});}
     }
@@ -3214,17 +3233,16 @@ App.Modules.Checklist = (function(){
     const cl=App.Store.getChecklists();const l=cl.lists.find(x=>x.id===listId);
     const essentials=l.items.filter(i=>i.essential&&!i.completed);
     if(!essentials.length){App.showToast('无需同步的必备项');return}
-    const today=App.Utils.todayStr();
-    const d=App.Store.getDaily(today);d.tasks=d.tasks||[];
+    const all=App.Store.getTasks();
     let added=0;
     essentials.forEach(it=>{
-      if(!d.tasks.some(t=>t.content===it.content&&t.type==='todo')){
-        d.tasks.push({id:App.Utils.generateUUID(),type:'todo',content:it.content,completed:false,createdAt:new Date().toISOString(),syncedFrom:it.id});
+      if(!all.some(t=>t.content===it.content&&t.type==='todo'&&!t.completed)){
+        all.push({id:App.Utils.generateUUID(),type:'todo',content:it.content,completed:false,createdAt:new Date().toISOString(),syncedFrom:it.id});
         added++;
       }
     });
-    App.Store.setDaily(today,d);
-    App.showToast(`已同步 ${added} 项到今日待办`);
+    App.Store.setTasks(all);
+    App.showToast(`已同步 ${added} 项到待办`);
   }
   function exportCSV(){
     const cl=App.Store.getChecklists();
@@ -3791,7 +3809,7 @@ App.Modules.Books = (function(){
 
 /* ============ App.Modules.Tasks ============ */
 App.Modules.Tasks = (function(){
-  let currentDate=App.Utils.todayStr();
+  let showCompleted=false;
   const DEFAULT_TASK_CATS=[
     {key:'life', label:'生活', color:'#7ab87a'},
     {key:'work', label:'工作', color:'#5b8db8'}
@@ -3808,19 +3826,15 @@ App.Modules.Tasks = (function(){
   function getTaskCatLabel(key){const c=getTaskCats().find(x=>x.key===key);return c?c.label:'其他';}
   function getDefaultTaskCat(key){return DEFAULT_TASK_CATS.find(x=>x.key===key);}
   function saveCustomTaskCats(arr){App.Store.setSettings({customTaskCats:arr});}
-  function getEntry(){return App.Store.getDaily(currentDate)}
-  function saveEntry(e){App.Store.setDaily(currentDate,e)}
   function render(){
     const panel=document.getElementById('view-tasks');
     panel.innerHTML=`
-      <div class="date-picker">
-        <button class="btn-icon" id="t-prev">‹</button>
-        <span class="date-text" id="t-date"></span>
-        <button class="btn-icon" id="t-next">›</button>
-        <button class="btn-text" id="t-today">今天</button>
-      </div>
       <div class="card">
-        <div class="card-header"><h3>事项管理</h3><div class="row gap4"><button class="btn btn-ghost btn-sm" id="task-cat-manage">⚙ 分类</button><span class="count" id="task-count">0</span></div></div>
+        <div class="card-header"><h3>事项管理</h3><div class="row gap4">
+          <label class="toggle-inline"><input type="checkbox" id="task-show-completed"> 显示已完成</label>
+          <button class="btn btn-ghost btn-sm" id="task-cat-manage">⚙ 分类</button>
+          <span class="count" id="task-count">0</span>
+        </div></div>
         <div class="card-body">
           <div class="row wrap mb6" style="gap:6px">
             <select id="task-type" style="width:auto;min-width:78px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
@@ -3829,15 +3843,13 @@ App.Modules.Tasks = (function(){
             ${App.speechBtnHTML('task-input')}
           </div>
           <div class="row task-input-group mb6" style="gap:6px">
+            <input type="date" id="task-due" title="截止日期" style="width:auto;min-width:118px">
             <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">
             <button class="btn btn-primary btn-sm" id="task-add">＋</button>
           </div>
           <div class="tasks-list" id="task-list"></div>
         </div>
       </div>`;
-    document.getElementById('t-prev').addEventListener('click',()=>shiftDay(-1));
-    document.getElementById('t-next').addEventListener('click',()=>shiftDay(1));
-    document.getElementById('t-today').addEventListener('click',()=>{currentDate=App.Utils.todayStr();renderDay();});
     panel.addEventListener('click',(e)=>{
       const btn=e.target.closest('#task-add');if(btn){e.preventDefault();e.stopPropagation();addTask();return}
     });
@@ -3849,24 +3861,27 @@ App.Modules.Tasks = (function(){
       const p=document.getElementById('task-priority');
       if(p)p.style.display=this.value==='todo'?'':'none';
     });
+    document.getElementById('task-show-completed').addEventListener('change',function(){
+      showCompleted=this.checked;renderTasks();
+    });
     document.getElementById('task-cat-manage').addEventListener('click',openCatManage);
-    renderDay();
-  }
-  function shiftDay(delta){
-    const d=App.Utils.parseDate(currentDate);d.setDate(d.getDate()+delta);
-    currentDate=App.Utils.formatDate(d);renderDay();
-  }
-  function renderDay(){
-    document.getElementById('t-date').textContent=`${currentDate} 周${App.Utils.weekStr(App.Utils.parseDate(currentDate))}`;
+    const sc=document.getElementById('task-show-completed');if(sc)sc.checked=showCompleted;
     renderTasks();
   }
+  function sortByDue(a,b){
+    const ka=a.dueDate||'9999-99-99', kb=b.dueDate||'9999-99-99';
+    if(ka!==kb)return ka<kb?-1:1;
+    return (a.createdAt||'')<(b.createdAt||'')?-1:1;
+  }
   function renderTasks(){
-    const entry=getEntry();const tasks=entry.tasks||[];
+    const tasks=App.Store.getTasks();
     document.getElementById('task-count').textContent=tasks.length;
     const todos=tasks.filter(t=>t.type==='todo');
     const reminders=tasks.filter(t=>t.type==='reminder');
-    const pending=todos.filter(t=>!t.completed).sort((a,b)=>(b.priority||0)-(a.priority||0));
+    const pending=todos.filter(t=>!t.completed).sort((a,b)=>(b.priority||0)-(a.priority||0)||sortByDue(a,b));
     const done=todos.filter(t=>t.completed);
+    const pendReminders=reminders.filter(t=>!t.completed).sort(sortByDue);
+    const doneReminders=reminders.filter(t=>t.completed);
     function groupByCategory(arr){
       const cats=getTaskCats();
       const groups={};
@@ -3885,10 +3900,12 @@ App.Modules.Tasks = (function(){
       const isTodo=t.type==='todo';
       const pri=['','❗','❗❗'][t.priority||0];
       const color=getTaskCatColor(t.category);
-      const check=isTodo?`<span class="task-icon task-check ${t.completed?'checked':''}" data-id="${t.id}">${t.completed?'✓':''}</span>`:`<span class="task-icon" data-id="${t.id}">📌</span>`;
-      return `<div class="task-item ${t.type} ${isTodo&&t.completed?'completed':''}" data-id="${t.id}" style="border-left-color:${color}">
+      const due=t.dueDate?`<span class="task-due ${App.Utils.isOverdue(t.dueDate)?'overdue':''}">📅${t.dueDate}</span>`:'';
+      const mark=isTodo?(t.completed?'✓':''):(t.completed?'✓':'📌');
+      const check=`<span class="task-icon task-check ${t.completed?'checked':''}" data-id="${t.id}">${mark}</span>`;
+      return `<div class="task-item ${t.type} ${t.completed?'completed':''}" data-id="${t.id}" style="border-left-color:${color}">
         ${check}
-        <span class="task-content" data-id="${t.id}">${App.Utils.escapeHtml(t.content)}${isTodo&&pri?`<span class="task-priority">${pri}</span>`:''}</span>
+        <span class="task-content" data-id="${t.id}">${App.Utils.escapeHtml(t.content)}${isTodo&&pri?`<span class="task-priority">${pri}</span>`:''}${due}</span>
         <button class="btn-icon task-del" data-id="${t.id}" style="width:28px;height:28px;font-size:12px">×</button>
       </div>`;
     }
@@ -3899,12 +3916,13 @@ App.Modules.Tasks = (function(){
     }
     let html='';
     html+=renderSection('待办',pending);
-    html+=renderSection('提醒',reminders);
-    if(done.length){
-      const groups=groupByCategory(done);
-      html+=`<div class="tasks-completed-section" id="tasks-completed-sec">
-        <div class="tasks-completed-toggle">✅ 已完成 (${done.length}) <span style="margin-left:auto;font-size:10px">▸</span></div>
-        <div class="tasks-completed-body">${groups.map(renderCatGroup).join('')}</div>
+    html+=renderSection('提醒',pendReminders);
+    if(showCompleted && (done.length||doneReminders.length)){
+      const allDone=done.concat(doneReminders);
+      const groups=groupByCategory(allDone);
+      html+=`<div class="tasks-completed-section open" id="tasks-completed-sec">
+        <div class="task-section-title">✅ 已完成 (${allDone.length})</div>
+        ${groups.map(renderCatGroup).join('')}
       </div>`;
     }
     if(!tasks.length) html='<div class="empty-state" style="padding:12px">暂无事项</div>';
@@ -3914,27 +3932,27 @@ App.Modules.Tasks = (function(){
   function bindTaskEvents(){
     document.querySelectorAll('#task-list .task-check').forEach(el=>el.addEventListener('click',e=>{
       e.stopPropagation();
-      const id=el.dataset.id;const entry=getEntry();
-      const t=entry.tasks.find(x=>x.id===id);if(!t)return;
-      t.completed=!t.completed;saveEntry(entry);renderTasks();
+      const id=el.dataset.id;const all=App.Store.getTasks();
+      const t=all.find(x=>x.id===id);if(!t)return;
+      t.completed=!t.completed;App.Store.setTasks(all);renderTasks();
     }));
     document.querySelectorAll('#task-list .task-content').forEach(el=>el.addEventListener('click',e=>{
       e.stopPropagation();editTask(el.dataset.id);
     }));
     document.querySelectorAll('#task-list .task-del').forEach(b=>b.addEventListener('click',e=>{
-      e.stopPropagation();const entry=getEntry();entry.tasks=entry.tasks.filter(x=>x.id!==b.dataset.id);saveEntry(entry);renderTasks();
+      e.stopPropagation();const all=App.Store.getTasks();App.Store.setTasks(all.filter(x=>x.id!==b.dataset.id));renderTasks();
     }));
-    const sec=document.getElementById('tasks-completed-sec');
-    if(sec)sec.querySelector('.tasks-completed-toggle').addEventListener('click',()=>sec.classList.toggle('open'));
   }
   function editTask(id){
-    const entry=getEntry();const t=entry.tasks.find(x=>x.id===id);if(!t)return;
+    const all=App.Store.getTasks();const t=all.find(x=>x.id===id);if(!t)return;
     const priOptions=t.type==='todo'?`<div class="form-row"><label>重要程度</label><select id="edit-task-priority"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select></div>`:'';
     const catOptions=`<div class="form-row"><label>分类</label><select id="edit-task-category">${getTaskCats().map(c=>`<option value="${c.key}" ${t.category===c.key?'selected':''}>${App.Utils.escapeHtml(c.label)}</option>`).join('')}</select></div>`;
+    const dueOptions=`<div class="form-row"><label>截止日期</label><input type="date" id="edit-task-due" value="${t.dueDate||''}"></div>`;
     App.openModal('编辑事项',`
       <div class="form-row"><label>内容</label><input type="text" id="edit-task-content" value="${App.Utils.escapeHtml(t.content)}"></div>
       ${priOptions}
       ${catOptions}
+      ${dueOptions}
       <div class="form-actions"><button class="btn btn-ghost" onclick="App.closeModal()">取消</button><button class="btn btn-primary" id="edit-task-save">保存</button></div>`);
     if(t.type==='todo')document.getElementById('edit-task-priority').value=t.priority||0;
     document.getElementById('edit-task-save').addEventListener('click',()=>{
@@ -3943,7 +3961,8 @@ App.Modules.Tasks = (function(){
       t.content=nv;
       if(t.type==='todo')t.priority=+document.getElementById('edit-task-priority').value;
       t.category=document.getElementById('edit-task-category').value;
-      saveEntry(entry);App.closeModal();renderTasks();App.showToast('已更新');
+      t.dueDate=document.getElementById('edit-task-due').value||'';
+      App.Store.setTasks(all);App.closeModal();renderTasks();App.showToast('已更新');
     });
   }
   function addTask(){
@@ -3953,9 +3972,11 @@ App.Modules.Tasks = (function(){
     const priority=type==='todo'&&priorityEl?+priorityEl.value:0;
     const categoryEl=document.getElementById('task-category');
     const category=categoryEl?categoryEl.value:'life';
-    const e=getEntry();e.tasks=e.tasks||[];
-    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,priority,category,createdAt:new Date().toISOString()});
-    saveEntry(e);input.value='';renderTasks();
+    const dueEl=document.getElementById('task-due');
+    const dueDate=dueEl?dueEl.value||'':'';
+    const all=App.Store.getTasks();
+    all.push({id:App.Utils.generateUUID(),type,content:v,completed:false,priority,category,dueDate,createdAt:new Date().toISOString()});
+    App.Store.setTasks(all);input.value='';if(dueEl)dueEl.value='';renderTasks();
   }
   function openCatManage(){
     const cats=getTaskCats();
@@ -3998,7 +4019,7 @@ App.Modules.Tasks = (function(){
       render();App.closeModal();App.showToast('分类已保存');
     });
   }
-  function onShow(){renderDay();}
+  function onShow(){render();}
   return {render,onShow};
 })();
 
@@ -4040,6 +4061,7 @@ App.Modules.Tasks = (function(){
       if(m&&m.init)m.init();
     });
     App.Router.init();
+    if(App.Store&&App.Store.migrateTasks)App.Store.migrateTasks();
     if(App.Cloud)App.Cloud.initAuto();
     // 全局搜索
     initGlobalSearch();
@@ -4067,9 +4089,9 @@ App.Modules.Tasks = (function(){
             const idx=+el.dataset.idx;
             const r=list[idx];
             // 跳转到对应模块
-            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·事项':'daily','每日小事·心情':'daily','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment'};
+            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·心情':'daily','事项管理':'tasks','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment'};
             const base=r.module.split('·')[0];
-            const view={物品小集:'items',每日小事:'daily',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment'}[base]||'home';
+            const view={物品小集:'items',每日小事:'daily',事项:'tasks',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment'}[base]||'home';
             App.Router.navigate(view);
             results.classList.remove('visible');input.value='';
           });
