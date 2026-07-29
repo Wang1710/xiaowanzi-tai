@@ -238,7 +238,7 @@ details.card[open]>summary::after{transform:rotate(180deg)}
 details.card>.card-body{padding:0 14px 12px}
 
 /* emoji 字体兜底 */
-.sidebar-footer,.weather-icon,.nav-icon{font-family:var(--emoji-font),var(--font)}
+.sidebar-footer,.nav-icon{font-family:var(--emoji-font),var(--font)}
 
 /* 菜单项卡片颜色可在这里扩展，如需要模块色左侧条 */
 /* 各模块马卡龙背景 */
@@ -686,7 +686,7 @@ window.__errs=[];
 window.addEventListener('error',function(e){window.__errs.push((e.error&&e.error.stack)||e.message+' @'+e.lineno+':'+e.colno)});
 /* ============================================================
  * 小丸子的工作台  ——  单文件应用
- * 模块组织：Utils → Store → Router → Speech → Weather → Modules → Init
+ * 模块组织：Utils → Store → Router → Speech → Modules → Init
  * ============================================================ */
 const App = window.App = {};
 
@@ -785,7 +785,7 @@ App.Store = (function(){
 
   // settings
   function getSettings(){
-    return Object.assign({city:'绍兴',sidebarCollapsed:false,homeSummaryHidden:false,translationApiKey:''},read(KEYS.settings,{}));
+    return Object.assign({sidebarCollapsed:false,homeSummaryHidden:false},read(KEYS.settings,{}));
   }
   function setSettings(s){write(KEYS.settings,Object.assign(getSettings(),s))}
 
@@ -878,7 +878,6 @@ App.Store = (function(){
     const ins=getInspiration();
     (ins.prompts||[]).forEach(p=>{if((p.title||'').toLowerCase().includes(q))pushRes('灵感·清单',p.id,p.title,'')});
     (ins.materials||[]).forEach(m=>{if((m.content||'').toLowerCase().includes(q))pushRes('灵感·素材',m.id,m.content,'')});
-    (ins.phraseHistory||[]).forEach(p=>{if((p.source||'').toLowerCase().includes(q)||(p.target||'').toLowerCase().includes(q))pushRes('灵感·翻译',p.id,`${p.source} → ${p.target}`,'')});
     // profit
     const profitAll=getProfitAll();
     Object.keys(profitAll).forEach(date=>{
@@ -1237,67 +1236,6 @@ App.Speech = (function(){
   return {isSupported,isSecure,canUseWebkit,describeSupport,startListening,stopListening,isListening,fallbackToKeyboard};
 })();
 
-/* ============ App.Weather ============ */
-App.Weather = (function(){
-  const WMO={
-    0:['☀️','晴'],1:['🌤️','主要晴'],2:['⛅','局部多云'],3:['☁️','阴'],
-    45:['🌫️','雾'],48:['🌫️','冻雾'],
-    51:['🌦️','小毛毛雨'],53:['🌦️','毛毛雨'],55:['🌧️','大毛毛雨'],
-    56:['🌧️','冻毛毛雨'],57:['🌧️','强冻毛毛雨'],
-    61:['🌧️','小雨'],63:['🌧️','中雨'],65:['🌧️','大雨'],
-    66:['🌧️','冻雨'],67:['🌧️','强冻雨'],
-    71:['🌨️','小雪'],73:['🌨️','中雪'],75:['🌨️','大雪'],77:['🌨️','雪粒'],
-    80:['🌧️','小阵雨'],81:['🌧️','阵雨'],82:['🌧️','强阵雨'],
-    85:['🌨️','小阵雪'],86:['🌨️','强阵雪'],
-    95:['⛈️','雷暴'],96:['⛈️','雷暴夹冰雹'],99:['⛈️','强雷暴夹冰雹']
-  };
-  async function fetchWeather(city){
-    let data = await tryFetchWeather(city);
-    // 回退：去掉末尾"区/县/镇/乡/街道"等行政区后缀重试，如"绍兴柯桥"→"绍兴"
-    if (!data) {
-      const m = city.match(/^(.+?)(区|县|镇|乡|街道|新区|开发区)$/);
-      if (m) data = await tryFetchWeather(m[1]);
-    }
-    // 再试逐级截断兜底
-    if (!data && city.length > 2) {
-      for (let i = city.length - 1; i >= 2 && !data; i--) {
-        const fallback = city.slice(0, i);
-        if (/[区县镇乡]$/.test(fallback)) continue;
-        data = await tryFetchWeather(fallback);
-      }
-    }
-    if (!data) throw new Error('未找到城市：'+city);
-    return data;
-  }
-  async function tryFetchWeather(city){
-    try{
-      const geoUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=5&language=zh&format=json`;
-      const geoRes=await fetch(geoUrl);
-      const geoData=await geoRes.json();
-      if(!geoData.results||!geoData.results.length)return null;
-      const {latitude,longitude,name,admin1}=geoData.results[0];
-      const wUrl=`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,weathercode,precipitation_probability_max&timezone=Asia/Shanghai&forecast_days=1`;
-      const wRes=await fetch(wUrl);
-      const wData=await wRes.json();
-      const current=wData.current_weather;
-      const daily=wData.daily;
-      const code=current.weathercode;
-      const currentT=current.temperature;
-      const maxT=daily.temperature_2m_max[0];
-      const minT=daily.temperature_2m_min[0];
-      const rainProb=daily.precipitation_probability_max?daily.precipitation_probability_max[0]:0;
-      const [icon,desc]=WMO[code]||['🌡️','未知'];
-      return {
-        cityName:name+(admin1&&admin1!==name?('·'+admin1):''),
-        icon,desc,
-        temp:`当前 ${Math.round(currentT)}° / 今日 ${Math.round(minT)}° ~ ${Math.round(maxT)}°`,
-        rain: rainProb>50?`降雨概率 ${rainProb}%`:(rainProb>20?'可能降雨':'无降雨'),
-        hasRain:rainProb>50
-      };
-    }catch(e){return null}
-  }
-  return {fetchWeather};
-})();
 
 /* ============ App.Router ============ */
 App.Router = (function(){
@@ -2724,24 +2662,6 @@ App.Modules.Inspiration = (function(){
           </div>
         </div>
       </details>
-      <details class="card" open><summary>双语翻译 <span class="count" id="phrase-count">0</span></summary>
-        <div class="card-body">
-          <div class="form-row"><label>原文</label>
-            <div class="row"><textarea id="tr-src" rows="2" placeholder="输入要翻译的文本" style="flex:1"></textarea>${App.speechBtnHTML('tr-src')}</div>
-          </div>
-          <div class="row gap8 mb6">
-            <select id="tr-lang" style="width:auto;min-width:90px"><option value="en">英文</option><option value="ja">日文</option><option value="ko">韩文</option></select>
-            <button class="btn btn-primary btn-sm" id="tr-go">翻译</button>
-            <button class="btn btn-ghost btn-sm" id="tr-manual">手动录入译文</button>
-          </div>
-          <div class="form-row"><label>译文</label>
-            <textarea id="tr-tgt" rows="2" placeholder="译文将显示在此，可编辑"></textarea>
-          </div>
-          <button class="btn btn-ghost btn-sm" id="tr-save">保存到短语历史</button>
-          <h4 class="mt10 mb6 fs-sm c-2">历史短语</h4>
-          <div id="phrase-list"></div>
-        </div>
-      </details>
       <details class="card"><summary>素材库 <span class="count" id="material-count">0</span></summary>
         <div class="card-body"><div id="material-list"></div></div>
       </details>`;
@@ -2783,17 +2703,11 @@ App.Modules.Inspiration = (function(){
       saveMaterial({type:'ocr',content:v});
     });
     document.getElementById('ocr-clear').addEventListener('click',()=>{document.getElementById('ocr-result').value='';App.showToast('已清空');});
-    // 翻译
-    document.getElementById('tr-go').addEventListener('click',doTranslate);
-    document.getElementById('tr-manual').addEventListener('click',()=>{
-      document.getElementById('tr-tgt').focus();App.showToast('请直接编辑译文框');
-    });
-    document.getElementById('tr-save').addEventListener('click',savePhrase);
     App.bindSpeechBtns();
     renderAll();
     renderDailyInspiration();
   }
-  function renderAll(){renderPrompts();renderMaterials();renderPhrases();renderDailyInspiration()}
+  function renderAll(){renderPrompts();renderMaterials();renderDailyInspiration()}
   // 每日手帐灵感推荐（内置内容池 + 手动刷新，无外部链接）
   const DAILY_TIPS=[
     {text:'试试"时间轴排版"——把一天的时间从早到晚画成一条线，每个时间段用不同颜色标记，一目了然。',tag:'排版技巧'},
@@ -2896,29 +2810,6 @@ App.Modules.Inspiration = (function(){
     ins.materials.push(Object.assign({id:App.Utils.generateUUID(),createdAt:new Date().toISOString()},data));
     App.Store.setInspiration(ins);renderMaterials();App.showToast('已保存到素材库');
   }
-  function renderPhrases(){
-    const ins=App.Store.getInspiration();const ps=ins.phraseHistory||[];
-    document.getElementById('phrase-count').textContent=ps.length;
-    document.getElementById('phrase-list').innerHTML=ps.slice().reverse().map(p=>`
-      <div class="phrase-item">
-        <span class="pi-src">${App.Utils.escapeHtml(p.source)}</span>
-        <span style="color:var(--text-3)">→</span>
-        <span class="pi-tgt">${App.Utils.escapeHtml(p.target)}</span>
-        <button class="btn-icon ph-del" data-id="${p.id}" style="width:28px;height:28px;font-size:12px">×</button>
-      </div>`).join('')||'<div class="empty-state" style="padding:10px">暂无翻译历史</div>';
-    document.querySelectorAll('.ph-del').forEach(b=>b.addEventListener('click',()=>{
-      const ins=App.Store.getInspiration();ins.phraseHistory=ins.phraseHistory.filter(p=>p.id!==b.dataset.id);App.Store.setInspiration(ins);renderPhrases();
-    }));
-  }
-  function savePhrase(){
-    const src=document.getElementById('tr-src').value.trim();
-    const tgt=document.getElementById('tr-tgt').value.trim();
-    if(!src||!tgt){App.showToast('原文和译文都不能为空');return}
-    const ins=App.Store.getInspiration();ins.phraseHistory=ins.phraseHistory||[];
-    ins.phraseHistory.push({id:App.Utils.generateUUID(),source:src,target:tgt,createdAt:new Date().toISOString()});
-    App.Store.setInspiration(ins);renderPhrases();App.showToast('已保存');
-    document.getElementById('tr-src').value='';document.getElementById('tr-tgt').value='';
-  }
   async function fetchXHS(){
     const url=document.getElementById('xhs-url').value.trim();if(!url){App.showToast('请输入链接');return}
     const prog=document.getElementById('ocr-progress');prog.textContent='';
@@ -2937,29 +2828,6 @@ App.Modules.Inspiration = (function(){
       prog.textContent=text?'识别完成':'未识别到文字';
     }catch(e){
       prog.textContent='OCR 失败：'+e.message+'，请手动输入';
-    }
-  }
-  async function doTranslate(){
-    const src=document.getElementById('tr-src').value.trim();
-    const lang=document.getElementById('tr-lang').value;
-    if(!src){App.showToast('请输入原文');return}
-    const tgt=document.getElementById('tr-tgt');
-    tgt.value='翻译中…';
-    const langMap={en:'zh|en',ja:'zh|ja',ko:'zh|ko'};
-    const pair=langMap[lang]||'zh|en';
-    try{
-      const res=await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(src)}&langpair=${pair}`);
-      const json=await res.json();
-      if(json.responseStatus===200&&json.responseData&&json.responseData.translatedText){
-        tgt.value=json.responseData.translatedText;
-        App.showToast('翻译完成');
-      }else{
-        tgt.value='';
-        App.showToast('翻译失败，请手动录入译文');
-        tgt.focus();
-      }
-    }catch(e){
-      tgt.value='';App.showToast('网络错误：'+e.message+', 请手动录入译文');tgt.focus();
     }
   }
   return {render};
@@ -3610,8 +3478,6 @@ App.Modules.Settings = (function(){
   function open(){
     const s=App.Store.getSettings();
     App.openModal('设置',`
-      <div class="form-row"><label>默认城市（天气）</label><input type="text" id="set-city" value="${App.Utils.escapeHtml(s.city)}"></div>
-      <div class="form-row"><label>翻译 API Key（可选，留空则手动录入译文）</label><input type="text" id="set-key" value="${App.Utils.escapeHtml(s.translationApiKey)}" placeholder="有道/百度等API Key"></div>
       <div class="form-row"><label>盈亏管理密码<br><span class="fs-xs c-3">设置后每次打开盈亏需验证</span></label><input type="password" id="set-profit-pwd" value="" placeholder="${s.profitPassword?'已设置（留空=不修改）':'留空则不加密'}"></div>
       <div class="form-row">
         <label>显示今日摘要卡</label>
@@ -3680,8 +3546,6 @@ App.Modules.Settings = (function(){
     document.getElementById('set-save').addEventListener('click',()=>{
       const pwdInput=document.getElementById('set-profit-pwd').value;
       const next=Object.assign({},s,{
-        city:document.getElementById('set-city').value.trim()||'绍兴',
-        translationApiKey:document.getElementById('set-key').value.trim(),
         homeSummaryHidden:document.getElementById('set-summary').value==='true',
         cloudPat:document.getElementById('set-cloud-pat').value.trim(),
         cloudRepo:document.getElementById('set-cloud-repo').value.trim()||'Wang1710/xiaowanzi-tai',
@@ -4179,7 +4043,7 @@ App.Modules.Tasks = (function(){
             const idx=+el.dataset.idx;
             const r=list[idx];
             // 跳转到对应模块
-            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·事项':'daily','每日小事·心情':'daily','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','灵感·翻译':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment'};
+            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·事项':'daily','每日小事·心情':'daily','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment'};
             const base=r.module.split('·')[0];
             const view={物品小集:'items',每日小事:'daily',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment'}[base]||'home';
             App.Router.navigate(view);
