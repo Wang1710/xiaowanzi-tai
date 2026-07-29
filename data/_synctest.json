@@ -1,0 +1,40 @@
+{
+  "_app": "xiaowanzi-workbench",
+  "_version": 1,
+  "_exportedAt": "2026-07-29T12:41:32.589Z",
+  "_keys": {
+    "items": "mj_items",
+    "daily": "mj_daily",
+    "projects": "mj_projects",
+    "oils": "mj_oils",
+    "inspiration": "mj_inspiration",
+    "profit": "mj_profit",
+    "checklists": "mj_checklists",
+    "settings": "mj_settings",
+    "reports": "mj_monthly_reports",
+    "books": "mj_books",
+    "moment": "mj_moment"
+  },
+  "data": {
+    "items": null,
+    "daily": null,
+    "projects": null,
+    "oils": null,
+    "inspiration": null,
+    "profit": null,
+    "checklists": null,
+    "settings": {
+      "city": "SYNCTEST",
+      "sidebarCollapsed": false,
+      "homeSummaryHidden": false,
+      "translationApiKey": "",
+      "cloudRepo": "Wang1710/xiaowanzi-tai",
+      "cloudBranch": "gh-pages",
+      "cloudPath": "data/_synctest.json",
+      "cloudAuto": false
+    },
+    "reports": null,
+    "books": null,
+    "moment": null
+  }
+}
