@@ -3526,17 +3526,6 @@ App.Modules.Settings = (function(){
       </div>
       <div class="form-row"><label>数据存储用量</label><div id="storage-usage" class="fs-sm c-2"></div></div>
       <div class="form-row">
-        <label>清理旧数据<br><span class="fs-xs c-3">信息太多时，可删除前面累积的记录（不可恢复，请先导出备份）</span></label>
-        <div class="row col">
-          <div class="row">
-            <input type="month" id="set-clear-before" class="inp-sm">
-            <button class="btn btn-ghost btn-sm" id="set-clear-month">删除该月及之前</button>
-          </div>
-          <div class="row wrap gap6" id="set-clear-modules"></div>
-          <button class="btn btn-danger btn-sm" id="set-clear-all">🗑️ 清空全部数据</button>
-        </div>
-      </div>
-      <div class="form-row">
         <label>数据备份与恢复<br><span class="fs-xs c-3">导出可保存全部数据；导入可完整还原（覆盖当前数据）</span></label>
         <div class="row">
           <button class="btn btn-ghost btn-sm" id="set-export-all">⬇️ 导出全部</button>
@@ -3578,52 +3567,6 @@ App.Modules.Settings = (function(){
       };
       reader.readAsText(f);this.value='';
     });
-    // 清理旧数据：动态生成模块清理按钮
-    const clearModules=[
-      {key:'items',name:'物品'},{key:'oils',name:'精油'},{key:'inspiration',name:'灵感'},
-      {key:'checklists',name:'清单'},{key:'books',name:'书海'},{key:'daily',name:'每日'},
-      {key:'projects',name:'项目'},{key:'profit',name:'盈亏'},{key:'moment',name:'一瞬'}
-    ];
-    const clearBox=document.getElementById('set-clear-modules');
-    clearBox.innerHTML=clearModules.map(m=>`<button class="btn btn-ghost btn-sm" data-clr="${m.key}">清${m.name}</button>`).join('')
-      +`<button class="btn btn-ghost btn-sm" data-clr="tasks">清事项</button>`;
-    clearBox.querySelectorAll('[data-clr]').forEach(btn=>{
-      btn.addEventListener('click',()=>{
-        const key=btn.dataset.clr;
-        const map={items:'物品',oils:'精油',inspiration:'灵感',checklists:'清单',books:'书海',daily:'每日记录',tasks:'事项',projects:'项目',profit:'盈亏',moment:'每日一瞬'};
-        if(!confirm('确定清空【'+map[key]+'】的全部数据吗？此操作不可恢复。'))return;
-        if(key==='tasks'){
-          // 事项数据分散在每日记录里，逐日清空 tasks 数组
-          const all=App.Store.getDailyAll();let n=0;
-          Object.keys(all).forEach(d=>{ if(all[d].tasks&&all[d].tasks.length){all[d].tasks=[];n++;} });
-          App.Store.setDailyRaw(all);
-        }else{
-          App.Store.clearKey(key);
-        }
-        App.showToast('已清空 '+map[key]);
-        refreshStorageUsage();
-      });
-    });
-    // 删除某月及之前的所有每日记录
-    document.getElementById('set-clear-month').addEventListener('click',()=>{
-      const val=document.getElementById('set-clear-before').value;
-      if(!val){App.showToast('请先选择月份');return;}
-      if(!confirm('确定删除 '+val+' 及之前的所有每日打卡/心情/体重记录吗？此操作不可恢复。'))return;
-      const n=App.Store.clearDailyBefore(val);
-      App.showToast('已删除 '+n+' 天的记录');
-      refreshStorageUsage();
-    });
-    // 清空全部数据
-    document.getElementById('set-clear-all').addEventListener('click',()=>{
-      if(!confirm('确定清空工作台的全部数据吗？包括所有模块、设置和备份信息，此操作不可恢复！'))return;
-      Object.values(KEYS).forEach(k=>localStorage.removeItem(k));
-      App.showToast('已清空全部数据，正在刷新…');
-      setTimeout(()=>location.reload(),800);
-    });
-    function refreshStorageUsage(){
-      let t=0;for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k.startsWith('mj_'))t+=(localStorage.getItem(k)||'').length*2;}
-      document.getElementById('storage-usage').textContent=`已使用 ${(t/1024/1024).toFixed(2)} MB（上限约 5 MB）`;
-    }
     document.getElementById('set-save').addEventListener('click',()=>{
       const pwdInput=document.getElementById('set-profit-pwd').value;
       const next=Object.assign({},s,{
