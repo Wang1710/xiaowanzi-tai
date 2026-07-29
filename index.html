@@ -26,7 +26,7 @@
   --nav-bg-home:#9fbee8;--nav-bg-items:#e8b8a3;--nav-bg-daily:#a3d9a3;
   --nav-bg-projects:#c9b3e0;--nav-bg-oils:#d9a3b8;--nav-bg-inspiration:#e8d2a3;
   --nav-bg-profit:#d49090;--nav-bg-checklist:#9fbee8;--nav-bg-books:#b8a3d9;
-  --nav-bg-tasks:#a3d9d9;
+  --nav-bg-tasks:#a3d9d9;--nav-bg-moment:#e8c4a3;
 
   --text:#5a4a4e;
   --text-2:#9a8a8e;
@@ -249,8 +249,21 @@ details.card>.card-body{padding:0 14px 12px}
 .nav-item.nav-checklist .nav-short{background:var(--nav-bg-checklist)}
 .nav-item.nav-books .nav-short{background:var(--nav-bg-books)}
 .nav-item.nav-tasks .nav-short{background:var(--nav-bg-tasks)}
+.nav-item.nav-moment .nav-short{background:var(--nav-bg-moment)}
 .nav-item.active .nav-short{color:var(--text);background:rgba(0,0,0,.06);font-weight:700}
 .nav-item.active{box-shadow:none;background:transparent!important}
+/* 各模块马卡龙背景 */
+body.view-home{--bg-main:#f0f7ff;--bg-soft:#e6f2ff}
+body.view-tasks{--bg-main:#f0fbfa;--bg-soft:#e6f8f7}
+body.view-daily{--bg-main:#f0fff0;--bg-soft:#e6ffe6}
+body.view-moment{--bg-main:#fff7f0;--bg-soft:#fff0e6}
+body.view-projects{--bg-main:#f7f2ff;--bg-soft:#f0e6ff}
+body.view-profit{--bg-main:#fff0f0;--bg-soft:#ffe6e6}
+body.view-items{--bg-main:#fff5f0;--bg-soft:#ffede6}
+body.view-oils{--bg-main:#fff2f6;--bg-soft:#ffe6ee}
+body.view-inspiration{--bg-main:#fffbf0;--bg-soft:#fff6e6}
+body.view-checklist{--bg-main:#f0f7ff;--bg-soft:#e6f2ff}
+body.view-books{--bg-main:#f5f2ff;--bg-soft:#ede6ff}
 
 /* ============ 首页 ============ */
 
@@ -325,8 +338,6 @@ details.card>.card-body{padding:0 14px 12px}
 .quick-note-item .qn-text{flex:1;word-break:break-word}
 .tasks-list{display:flex;flex-direction:column;gap:4px}
 .task-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:var(--r-sm);min-height:36px;border-left:3px solid transparent}
-.task-item.todo{border-left-color:var(--cat-work)}
-.task-item.reminder{border-left-color:#e0966a}
 .task-item .task-icon{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
 .task-item .task-icon.task-check{width:22px;height:22px;border:2px solid var(--text-3);border-radius:5px;background:transparent;color:#fff;font-size:13px;font-weight:700}
 .task-item.todo.completed .task-icon.task-check{background:var(--c-green);border-color:var(--c-green)}
@@ -336,7 +347,7 @@ details.card>.card-body{padding:0 14px 12px}
 .task-item .task-del{font-size:14px;color:var(--text-3);opacity:.5}
 .task-item .task-del:active{opacity:1;color:var(--danger)}
 .task-content{cursor:pointer}
-.task-priority-select{width:auto;min-width:66px;font-size:var(--f-sm);padding:6px 8px;height:36px;box-sizing:border-box}
+.task-priority-select,.task-category-select{width:auto;min-width:66px;font-size:var(--f-sm);padding:6px 8px;height:36px;box-sizing:border-box}
 .task-priority-select:disabled{opacity:.4}
 .task-input-group{display:block;width:100%}
 .task-input-group #task-input{width:100%;height:36px;min-height:36px;box-sizing:border-box}
@@ -344,6 +355,9 @@ details.card>.card-body{padding:0 14px 12px}
 .task-priority{font-size:var(--f-xs);color:var(--danger);margin-left:4px}
 .task-section{margin-bottom:8px}
 .task-section-title{font-size:var(--f-xs);color:var(--text-3);margin:8px 4px 4px}
+.task-cat-header{display:flex;align-items:center;gap:6px;font-size:var(--f-xs);color:var(--text-2);margin:6px 4px 2px;font-weight:500}
+.task-cat-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.cat-row{display:flex;align-items:center;gap:8px}
 .tasks-completed-section{margin-top:8px;border-top:1px dashed var(--border);padding-top:6px}
 .tasks-completed-toggle{display:flex;align-items:center;gap:4px;font-size:var(--f-xs);color:var(--text-3);cursor:pointer;padding:2px 0;user-select:none}
 .tasks-completed-body{display:none;flex-direction:column;gap:4px}
@@ -635,7 +649,7 @@ details.card>.card-body{padding:0 14px 12px}
 .img-lightbox .il-tip{position:absolute;bottom:24px;color:#fff;font-size:var(--f-xs);opacity:.8}
 </style>
 </head>
-<body>
+<body class="view-home">
 <div id="app">
   <nav id="sidebar">
     <div class="sidebar-logo" id="sidebar-logo">燕</div>
@@ -1249,6 +1263,8 @@ App.Router = (function(){
     if(!panel){location.hash='#home';return}
     panel.classList.add('active');
     document.querySelectorAll('.nav-item').forEach(el=>el.classList.toggle('active',el.dataset.view===view));
+    document.body.classList.forEach(cls=>{if(cls.startsWith('view-'))document.body.classList.remove(cls)});
+    document.body.classList.add('view-'+view);
     const mod=App.Modules&&App.Modules[cap(view)];
     if(!rendered[view]){
       if(mod&&mod.render){mod.render();rendered[view]=true}
@@ -3840,6 +3856,22 @@ App.Modules.Books = (function(){
 /* ============ App.Modules.Tasks ============ */
 App.Modules.Tasks = (function(){
   let currentDate=App.Utils.todayStr();
+  const DEFAULT_TASK_CATS=[
+    {key:'life', label:'生活', color:'#7ab87a'},
+    {key:'work', label:'工作', color:'#5b8db8'}
+  ];
+  function getTaskCats(){
+    const s=App.Store.getSettings();
+    const custom=s.customTaskCats||[];
+    const map={};
+    DEFAULT_TASK_CATS.forEach(c=>map[c.key]={...c});
+    custom.forEach(c=>map[c.key]={...c});
+    return Object.values(map);
+  }
+  function getTaskCatColor(key){const c=getTaskCats().find(x=>x.key===key);return c?c.color:'#999';}
+  function getTaskCatLabel(key){const c=getTaskCats().find(x=>x.key===key);return c?c.label:'其他';}
+  function getDefaultTaskCat(key){return DEFAULT_TASK_CATS.find(x=>x.key===key);}
+  function saveCustomTaskCats(arr){App.Store.setSettings({customTaskCats:arr});}
   function getEntry(){return App.Store.getDaily(currentDate)}
   function saveEntry(e){App.Store.setDaily(currentDate,e)}
   function render(){
@@ -3852,11 +3884,12 @@ App.Modules.Tasks = (function(){
         <button class="btn-text" id="t-today">今天</button>
       </div>
       <div class="card">
-        <div class="card-header"><h3>事项管理</h3><span class="count" id="task-count">0</span></div>
+        <div class="card-header"><h3>事项管理</h3><div class="row gap4"><button class="btn btn-ghost btn-sm" id="task-cat-manage">⚙ 分类</button><span class="count" id="task-count">0</span></div></div>
         <div class="card-body">
           <div class="row wrap mb6" style="gap:6px">
             <select id="task-type" style="width:auto;min-width:78px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
             <select id="task-priority" class="task-priority-select"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select>
+            <select id="task-category" class="task-category-select">${getTaskCats().map(c=>`<option value="${c.key}">${App.Utils.escapeHtml(c.label)}</option>`).join('')}</select>
             ${App.speechBtnHTML('task-input')}
             <button class="btn btn-primary btn-sm" id="task-add">＋</button>
           </div>
@@ -3880,6 +3913,7 @@ App.Modules.Tasks = (function(){
       const p=document.getElementById('task-priority');
       if(p)p.style.display=this.value==='todo'?'':'none';
     });
+    document.getElementById('task-cat-manage').addEventListener('click',openCatManage);
     renderDay();
   }
   function shiftDay(delta){
@@ -3897,27 +3931,44 @@ App.Modules.Tasks = (function(){
     const reminders=tasks.filter(t=>t.type==='reminder');
     const pending=todos.filter(t=>!t.completed).sort((a,b)=>(b.priority||0)-(a.priority||0));
     const done=todos.filter(t=>t.completed);
+    function groupByCategory(arr){
+      const cats=getTaskCats();
+      const groups={};
+      cats.forEach(c=>groups[c.key]=[]);
+      groups['_other']=[];
+      arr.forEach(t=>{
+        const k=t.category||'_other';
+        if(groups[k]) groups[k].push(t); else groups['_other'].push(t);
+      });
+      return cats.map(c=>({cat:c,items:groups[c.key]})).filter(g=>g.items.length).concat(groups['_other'].length?[{cat:{key:'_other',label:'其他',color:'#999'},items:groups['_other']}]:[]);
+    }
+    function renderCatGroup(g){
+      return `<div class="task-cat-header"><span class="task-cat-dot" style="background:${g.cat.color}"></span>${App.Utils.escapeHtml(g.cat.label)}</div>${g.items.map(renderItem).join('')}`;
+    }
     function renderItem(t){
       const isTodo=t.type==='todo';
       const pri=['','❗','❗❗'][t.priority||0];
+      const color=getTaskCatColor(t.category);
       const check=isTodo?`<span class="task-icon task-check ${t.completed?'checked':''}" data-id="${t.id}">${t.completed?'✓':''}</span>`:`<span class="task-icon" data-id="${t.id}">📌</span>`;
-      return `<div class="task-item ${t.type} ${isTodo&&t.completed?'completed':''}" data-id="${t.id}">
+      return `<div class="task-item ${t.type} ${isTodo&&t.completed?'completed':''}" data-id="${t.id}" style="border-left-color:${color}">
         ${check}
         <span class="task-content" data-id="${t.id}">${App.Utils.escapeHtml(t.content)}${isTodo&&pri?`<span class="task-priority">${pri}</span>`:''}</span>
         <button class="btn-icon task-del" data-id="${t.id}" style="width:28px;height:28px;font-size:12px">×</button>
       </div>`;
     }
+    function renderSection(title,list){
+      if(!list.length)return '';
+      const groups=groupByCategory(list);
+      return `<div class="task-section"><div class="task-section-title">${title}</div>${groups.map(renderCatGroup).join('')}</div>`;
+    }
     let html='';
-    if(pending.length){
-      html+=`<div class="task-section"><div class="task-section-title">待办</div>${pending.map(renderItem).join('')}</div>`;
-    }
-    if(reminders.length){
-      html+=`<div class="task-section"><div class="task-section-title">提醒</div>${reminders.map(renderItem).join('')}</div>`;
-    }
+    html+=renderSection('待办',pending);
+    html+=renderSection('提醒',reminders);
     if(done.length){
+      const groups=groupByCategory(done);
       html+=`<div class="tasks-completed-section" id="tasks-completed-sec">
         <div class="tasks-completed-toggle">✅ 已完成 (${done.length}) <span style="margin-left:auto;font-size:10px">▸</span></div>
-        <div class="tasks-completed-body">${done.map(renderItem).join('')}</div>
+        <div class="tasks-completed-body">${groups.map(renderCatGroup).join('')}</div>
       </div>`;
     }
     if(!tasks.length) html='<div class="empty-state" style="padding:12px">暂无事项</div>';
@@ -3943,9 +3994,11 @@ App.Modules.Tasks = (function(){
   function editTask(id){
     const entry=getEntry();const t=entry.tasks.find(x=>x.id===id);if(!t)return;
     const priOptions=t.type==='todo'?`<div class="form-row"><label>重要程度</label><select id="edit-task-priority"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select></div>`:'';
+    const catOptions=`<div class="form-row"><label>分类</label><select id="edit-task-category">${getTaskCats().map(c=>`<option value="${c.key}" ${t.category===c.key?'selected':''}>${App.Utils.escapeHtml(c.label)}</option>`).join('')}</select></div>`;
     App.openModal('编辑事项',`
       <div class="form-row"><label>内容</label><input type="text" id="edit-task-content" value="${App.Utils.escapeHtml(t.content)}"></div>
       ${priOptions}
+      ${catOptions}
       <div class="form-actions"><button class="btn btn-ghost" onclick="App.closeModal()">取消</button><button class="btn btn-primary" id="edit-task-save">保存</button></div>`);
     if(t.type==='todo')document.getElementById('edit-task-priority').value=t.priority||0;
     document.getElementById('edit-task-save').addEventListener('click',()=>{
@@ -3953,6 +4006,7 @@ App.Modules.Tasks = (function(){
       if(!nv){App.showToast('内容不能为空');return;}
       t.content=nv;
       if(t.type==='todo')t.priority=+document.getElementById('edit-task-priority').value;
+      t.category=document.getElementById('edit-task-category').value;
       saveEntry(entry);App.closeModal();renderTasks();App.showToast('已更新');
     });
   }
@@ -3961,9 +4015,52 @@ App.Modules.Tasks = (function(){
     const type=document.getElementById('task-type').value;
     const priorityEl=document.getElementById('task-priority');
     const priority=type==='todo'&&priorityEl?+priorityEl.value:0;
+    const categoryEl=document.getElementById('task-category');
+    const category=categoryEl?categoryEl.value:'life';
     const e=getEntry();e.tasks=e.tasks||[];
-    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,priority,createdAt:new Date().toISOString()});
+    e.tasks.push({id:App.Utils.generateUUID(),type,content:v,completed:false,priority,category,createdAt:new Date().toISOString()});
     saveEntry(e);input.value='';renderTasks();
+  }
+  function openCatManage(){
+    const cats=getTaskCats();
+    let html='<div id="task-cat-list">';
+    cats.forEach(c=>{
+      const isDefault=!!getDefaultTaskCat(c.key);
+      html+=`<div class="form-row cat-row" data-key="${c.key}">
+        <input type="text" class="cat-label" value="${App.Utils.escapeHtml(c.label)}" placeholder="分类名称" style="flex:1;min-width:0">
+        <input type="color" class="cat-color" value="${c.color}" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);padding:2px;flex-shrink:0">
+        ${isDefault?'':'<button class="btn-icon cat-del" style="width:28px;height:28px;font-size:12px">×</button>'}
+      </div>`;
+    });
+    html+='</div><button class="btn btn-ghost btn-sm mt8" id="task-cat-add">＋ 添加分类</button>';
+    App.openModal('管理分类',`
+      ${html}
+      <div class="form-actions"><button class="btn btn-ghost" onclick="App.closeModal()">取消</button><button class="btn btn-primary" id="task-cat-save">保存</button></div>`);
+    const listEl=document.getElementById('task-cat-list');
+    document.getElementById('task-cat-add').addEventListener('click',()=>{
+      const row=document.createElement('div');row.className='form-row cat-row';
+      row.innerHTML=`<input type="text" class="cat-label" value="新分类" placeholder="分类名称" style="flex:1;min-width:0"><input type="color" class="cat-color" value="#999999" style="width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);padding:2px;flex-shrink:0"><button class="btn-icon cat-del" style="width:28px;height:28px;font-size:12px">×</button>`;
+      listEl.appendChild(row);
+      row.querySelector('.cat-del').addEventListener('click',()=>row.remove());
+    });
+    document.querySelectorAll('.cat-row .cat-del').forEach(b=>b.addEventListener('click',()=>b.closest('.cat-row').remove()));
+    document.getElementById('task-cat-save').addEventListener('click',()=>{
+      const custom=[];
+      document.querySelectorAll('.cat-row').forEach(r=>{
+        const key=r.dataset.key;
+        const label=r.querySelector('.cat-label').value.trim();
+        const color=r.querySelector('.cat-color').value;
+        if(!label)return;
+        const def=getDefaultTaskCat(key);
+        if(def){
+          if(label!==def.label || color!==def.color) custom.push({key,label,color});
+        }else{
+          custom.push({key:key||'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),label,color});
+        }
+      });
+      saveCustomTaskCats(custom);
+      render();App.closeModal();App.showToast('分类已保存');
+    });
   }
   function onShow(){renderDay();}
   return {render,onShow};
