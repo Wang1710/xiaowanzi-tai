@@ -336,9 +336,11 @@ details.card>.card-body{padding:0 14px 12px}
 .task-item .task-del{font-size:14px;color:var(--text-3);opacity:.5}
 .task-item .task-del:active{opacity:1;color:var(--danger)}
 .task-content{cursor:pointer}
-.task-priority-select{width:auto;min-width:64px;font-size:var(--f-xs);padding:3px 6px}
+.task-priority-select{width:auto;min-width:66px;font-size:var(--f-sm);padding:6px 8px;height:36px;box-sizing:border-box}
 .task-priority-select:disabled{opacity:.4}
 .task-input-group{flex:1;min-width:0;gap:6px}
+.task-input-group #task-input{height:36px;min-height:36px;box-sizing:border-box}
+.task-input-group #task-add{height:36px;min-height:36px;padding:0 14px;box-sizing:border-box}
 .task-priority{font-size:var(--f-xs);color:var(--danger);margin-left:4px}
 .task-section{margin-bottom:8px}
 .task-section-title{font-size:var(--f-xs);color:var(--text-3);margin:8px 4px 4px}
@@ -376,7 +378,7 @@ details.card>.card-body{padding:0 14px 12px}
 .cal-dot-habit{background:var(--cat-work)}
 .cal-legend{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:10px;color:var(--text-2)}
 .cal-legend span{display:flex;align-items:center;gap:2px}
-.habit-weight-input{width:56px;max-width:56px;flex:none;min-height:22px;height:22px;padding:1px 4px;text-align:center;font-size:var(--f-sm)}
+.habit-weight-input{width:62px;max-width:62px;flex:none;min-height:34px;height:34px;padding:2px 6px;text-align:center;font-size:var(--f-sm)}
 .habit-unit{font-size:var(--f-xs);color:var(--text-3)}
 .habit-check-row{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px}
 .habit-big-num{display:none}
@@ -391,10 +393,11 @@ details.card>.card-body{padding:0 14px 12px}
 .habit-row-label{font-size:var(--f-sm);color:var(--text-2);font-weight:500;flex:1;text-align:left;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 底部：体重 / 心情 */
 .habit-bottom-row{display:flex;align-items:center;gap:10px;min-height:32px;margin-top:8px}
-.habit-wm-row{display:flex;align-items:center;gap:18px;margin-top:10px}
-.habit-wm-item{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-.habit-weight-wrap{display:flex;align-items:center;gap:4px}
-.habit-mood-select{flex:none;max-width:110px;font-size:var(--f-xs);padding:3px 6px}
+.habit-wm-row{display:flex;align-items:center;gap:14px;margin-top:10px}
+.habit-wm-item{display:flex;align-items:center;gap:6px;flex:1;min-width:0}
+.habit-wm-item .habit-row-label{flex:none;width:34px;white-space:nowrap}
+.habit-weight-wrap{display:flex;align-items:center;gap:4px;flex:1;min-width:0}
+.habit-mood-select{flex:1;min-width:0;max-width:none;font-size:var(--f-sm);padding:6px 8px;height:34px;box-sizing:border-box}
 .habit-mood-color{width:16px;height:16px;border-radius:50%;border:1px solid var(--border);flex:none}
 .habit-manage-row{display:flex;justify-content:flex-end;margin-top:6px}
 .mood-note{width:100%;min-height:28px;font-size:var(--f-xs)}
@@ -594,12 +597,14 @@ details.card>.card-body{padding:0 14px 12px}
 .moment-weekbar .mw-btn:active{transform:scale(.92)}
 .moment-weekbar .mw-range{flex:1;text-align:center;font-size:var(--f-md);font-weight:700}
 
-.moment-wall{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:4px 0 8px}
+.moment-wall{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px 0 8px}
 .moment-wall::-webkit-scrollbar{display:none}
-.moment-title-card{grid-column:1 / -1;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--bg-card);border-radius:var(--r-md);padding:8px 12px;box-shadow:var(--shadow)}
-.moment-title-card .mp-title{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
-.moment-title-card .mp-week{font-size:var(--f-lg);font-weight:700;color:var(--text);margin-bottom:2px}
-.moment-title-card .mp-month{font-size:var(--f-xs);color:var(--text-3);margin-bottom:6px}
+.moment-cell{background:var(--bg-card);border-radius:var(--r-sm);box-shadow:var(--shadow);padding:6px}
+.moment-date-cell{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.moment-date-cell .mdc-title{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
+.moment-date-cell .mdc-range{font-size:var(--f-md);font-weight:700;color:var(--text);line-height:1.25}
+.moment-date-cell .mdc-sub{font-size:var(--f-xs);color:var(--text-3)}
+.moment-cal-cell{padding:4px;display:flex;align-items:center;justify-content:center}
 .moment-day-cell{background:var(--bg-card);border-radius:var(--r-sm);padding:4px;display:flex;flex-direction:column;gap:3px;border:2px solid transparent;cursor:pointer;box-shadow:var(--shadow)}
 .moment-day-cell.selected{border-color:var(--c-pink);box-shadow:0 0 0 2px rgba(245,204,215,.35)}
 .moment-day-cell .mdc-head{display:flex;align-items:center;justify-content:space-between}
@@ -3386,15 +3391,15 @@ App.Modules.Moment = (function(){
     const rangeEl=document.getElementById('m-range');
     if(rangeEl)rangeEl.textContent=`${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}`;
     const today=App.Utils.todayStr();
-    const EN=['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY','SUNDAY'];
-    // 标题手帐卡（整行）+ 7 天照片墙（4 列网格，2 行完整展示整周）
+    const CN=['周一','周二','周三','周四','周五','周六','周日'];
+    // 照片墙 3×3：第1格日期、第2格月历、第3格起为周一~周日
     let html='';
-    html+=`<div class="moment-title-card" id="m-titlecard">
-      <div>
-        <div class="mp-title">Weekly plog</div>
-        <div class="mp-week">${ws.getFullYear()}</div>
-        <div class="mp-month">${ws.getMonth()+1}月 · 一瞬手帐</div>
-      </div>
+    html+=`<div class="moment-cell moment-date-cell">
+      <div class="mdc-title">Weekly</div>
+      <div class="mdc-range">${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}</div>
+      <div class="mdc-sub">一瞬手帐</div>
+    </div>`;
+    html+=`<div class="moment-cell moment-cal-cell">
       ${renderMiniCalendar(ws.getFullYear(),ws.getMonth(),all)}
     </div>`;
     for(let i=0;i<7;i++){
@@ -3406,7 +3411,7 @@ App.Modules.Moment = (function(){
       const photo=rec&&rec.photo?`<img class="moment-card-photo" src="${rec.photo}" data-src="${rec.photo}">`:`<div class="moment-card-ph">📷</div>`;
       html+=`<div class="moment-day-cell ${isSelected?'selected':''}" data-date="${ds}">
         <div class="mdc-head">
-          <span class="mp-dow">${EN[i]}</span>
+          <span class="mp-dow">${CN[i]}</span>
           <span class="mp-num ${isToday?'today':''}">${d.getDate()}</span>
         </div>
         ${photo}
