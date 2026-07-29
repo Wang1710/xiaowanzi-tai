@@ -580,8 +580,8 @@ details.card>.card-body{padding:0 14px 12px}
 /* ============ 每日一瞬 Moment ============ */
 .home-cover{position:relative;width:100%;border-radius:var(--r-lg);overflow:hidden;background:var(--bg-card);
   box-shadow:var(--shadow);display:flex;flex-direction:column;margin-bottom:10px;cursor:pointer}
-.home-cover .hc-photo{width:100%;height:33vh;min-height:190px;object-fit:cover;display:block;background:var(--bg-soft)}
-.home-cover .hc-ph{width:100%;height:33vh;min-height:190px;display:flex;align-items:center;justify-content:center;
+.home-cover .hc-photo{width:100%;height:22vh;min-height:130px;object-fit:contain;display:block;background:var(--bg-soft)}
+.home-cover .hc-ph{width:100%;height:22vh;min-height:130px;display:flex;align-items:center;justify-content:center;
   font-size:40px;color:var(--text-3);background:var(--bg-soft)}
 .home-cover .hc-info{padding:8px 12px;display:flex;align-items:center;gap:8px}
 .home-cover .hc-text{flex:1;font-size:var(--f-md);color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -600,10 +600,9 @@ details.card>.card-body{padding:0 14px 12px}
 .moment-wall{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding:4px 0 8px}
 .moment-wall::-webkit-scrollbar{display:none}
 .moment-cell{background:var(--bg-card);border-radius:var(--r-sm);box-shadow:var(--shadow);padding:6px}
-.moment-date-cell{display:flex;flex-direction:column;justify-content:center;gap:2px}
+.moment-date-cell{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;text-align:center}
 .moment-date-cell .mdc-title{font-size:9px;color:var(--text-3);text-transform:uppercase;letter-spacing:1px}
 .moment-date-cell .mdc-range{font-size:var(--f-md);font-weight:700;color:var(--text);line-height:1.25}
-.moment-date-cell .mdc-sub{font-size:var(--f-xs);color:var(--text-3)}
 .moment-cal-cell{padding:4px;display:flex;align-items:center;justify-content:center}
 .moment-day-cell{background:var(--bg-card);border-radius:var(--r-sm);padding:4px;display:flex;flex-direction:column;gap:3px;border:2px solid transparent;cursor:pointer;box-shadow:var(--shadow)}
 .moment-day-cell.selected{border-color:var(--c-pink);box-shadow:0 0 0 2px rgba(245,204,215,.35)}
@@ -3397,7 +3396,6 @@ App.Modules.Moment = (function(){
     html+=`<div class="moment-cell moment-date-cell">
       <div class="mdc-title">Weekly</div>
       <div class="mdc-range">${ws.getMonth()+1}/${ws.getDate()} – ${we.getMonth()+1}/${we.getDate()}</div>
-      <div class="mdc-sub">一瞬手帐</div>
     </div>`;
     html+=`<div class="moment-cell moment-cal-cell">
       ${renderMiniCalendar(ws.getFullYear(),ws.getMonth(),all)}
@@ -3856,10 +3854,10 @@ App.Modules.Tasks = (function(){
           <div class="row wrap mb6" style="gap:6px">
             <select id="task-type" style="width:auto;min-width:78px"><option value="todo">计划待办</option><option value="reminder">事项提醒</option></select>
             <select id="task-priority" class="task-priority-select"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select>
-            <div class="row task-input-group">
-              <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
-              <button class="btn btn-primary btn-sm" id="task-add">＋</button>
-            </div>
+          </div>
+          <div class="row task-input-group mb6" style="gap:6px">
+            <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">${App.speechBtnHTML('task-input')}
+            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
           </div>
           <div class="tasks-list" id="task-list"></div>
         </div>
