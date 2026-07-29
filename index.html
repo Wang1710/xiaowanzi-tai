@@ -781,7 +781,7 @@ App.Store = (function(){
     moment:'mj_moment'
   };
   function read(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
-  function write(key,val){try{localStorage.setItem(key,JSON.stringify(val));return true}catch(e){App.showToast('存储失败，可能空间不足');return false}}
+  function write(key,val){try{localStorage.setItem(key,JSON.stringify(val));if(App.Cloud&&App.Cloud.schedulePush)App.Cloud.schedulePush();return true}catch(e){App.showToast('存储失败，可能空间不足');return false}}
 
   // settings
   function getSettings(){
@@ -1019,6 +1019,99 @@ App.Store = (function(){
     });
     return count;
   }
+})();
+
+/* ============ App.Cloud：GitHub 云端同步 ============ */
+App.Cloud = (function(){
+  function cfg(){
+    const s=App.Store.getSettings();
+    return {
+      pat:(s.cloudPat||'').trim(),
+      repo:(s.cloudRepo||'Wang1710/xiaowanzi-tai').trim(),
+      branch:(s.cloudBranch||'gh-pages').trim(),
+      path:(s.cloudPath||'data/store.json').trim(),
+      auto:!!s.cloudAuto
+    };
+  }
+  function b64encode(str){return btoa(unescape(encodeURIComponent(str)));}
+  function b64decode(b64){return decodeURIComponent(escape(atob(b64)));}
+  function status(msg){const el=document.getElementById('cloud-status');if(el)el.textContent=msg;}
+  function api(c,method,body){
+    // GET 用 ?ref= 指定读取分支；PUT 必须把目标分支放进 body 的 branch 字段，
+    // 因为 GitHub Contents API 在 PUT 时会忽略 ?ref= 并写入仓库默认分支（main），
+    // 导致 gh-pages 上永远读不到文件。
+    const base='https://api.github.com/repos/'+c.repo+'/contents/'+c.path;
+    const url=(method==='GET')?(base+'?ref='+c.branch):base;
+    const headers={'Authorization':'Bearer '+c.pat,'Accept':'application/vnd.github+json','Content-Type':'application/json'};
+    let fb=body;
+    if(method==='PUT'&&body){fb=Object.assign({},body,{branch:c.branch});}
+    return fetch(url,{method:method,headers:headers,body:fb?JSON.stringify(fb):undefined}).then(function(r){
+      if(r.status===404)return {notfound:true};
+      if(!r.ok)return r.json().then(function(e){throw new Error((e&&e.message)||('HTTP '+r.status));});
+      return r.json();
+    });
+  }
+  function buildBody(content,meta){
+    const body={message:'sync: update store '+new Date().toISOString(),content:content};
+    if(meta&&!meta.notfound&&meta.sha)body.sha=meta.sha;
+    return body;
+  }
+  function doPut(c,body){
+    return api(c,'PUT',body).catch(function(e){
+      // 兜底：偶发 GET 误判文件不存在导致 PUT 缺 sha 报 422，重新取 sha 再试一次
+      if(/sha/i.test(e.message||'')){
+        return api(c,'GET',null).then(function(m2){return api(c,'PUT',buildBody(body.content,m2));});
+      }
+      throw e;
+    });
+  }
+  function push(){
+    const c=cfg();
+    if(!c.pat){status('请先在设置填写 GitHub Token');return Promise.reject('no pat');}
+    status('☁️ 上传中…');
+    const snap=App.Store.exportAll();
+    if(snap.data&&snap.data.settings){delete snap.data.settings.cloudPat;delete snap.data.settings.profitPassword;}
+    const content=b64encode(JSON.stringify(snap,null,2));
+    return api(c,'GET',null).then(function(meta){
+      return doPut(c,buildBody(content,meta));
+    }).then(function(){status('✅ 已上传云端 '+new Date().toLocaleTimeString());})
+      .catch(function(e){status('❌ 上传失败：'+e.message);});
+  }
+  function pull(){
+    const c=cfg();
+    if(!c.pat){status('请先在设置填写 GitHub Token');return Promise.reject('no pat');}
+    status('☁️ 拉取中…');
+    return api(c,'GET',null).then(function(meta){
+      if(meta.notfound)throw new Error('云端暂无备份');
+      const snap=JSON.parse(b64decode(meta.content));
+      const keepPat=App.Store.getSettings().cloudPat;
+      const keepPwd=App.Store.getSettings().profitPassword;
+      const n=App.Store.importAll(snap);
+      const s=App.Store.getSettings();
+      if(keepPat)s.cloudPat=keepPat;
+      if(keepPwd)s.profitPassword=keepPwd;
+      App.Store.setSettings(s);
+      setTimeout(function(){
+        if(App.Router&&App.Router.forceReload)App.Router.forceReload();
+        else if(App.Router&&App.Router.go)App.Router.go(App.Router.getCurrentView()||'home');
+        else location.reload();
+      },600);
+      status('✅ 已从云端恢复 '+n+' 项');
+    }).catch(function(e){status('❌ 拉取失败：'+e.message);});
+  }
+  let timer=null;
+  function schedulePush(){
+    const c=cfg();
+    if(!c.auto||!c.pat)return;
+    if(timer)clearTimeout(timer);
+    timer=setTimeout(function(){push();},2500);
+  }
+  function initAuto(){
+    const c=cfg();
+    if(!c.auto||!c.pat)return;
+    api(c,'GET',null).then(function(meta){ if(meta.notfound)push(); }).catch(function(){});
+  }
+  return {push:push,pull:pull,schedulePush:schedulePush,initAuto:initAuto,status:status};
 })();
 
 /* ============ App.Speech ============ */
@@ -3533,6 +3626,20 @@ App.Modules.Settings = (function(){
           <input type="file" id="set-import-file" accept="application/json,.json" style="display:none">
         </div>
       </div>
+      <div class="form-row">
+        <label>☁️ 云端同步（GitHub）<br><span class="fs-xs c-3">把数据存到你的 GitHub 仓库，换网址/清缓存都不丢；Token 只存在你本机</span></label>
+        <div class="row col">
+          <input type="password" id="set-cloud-pat" class="inp" placeholder="GitHub Personal Access Token" value="${App.Utils.escapeHtml(s.cloudPat||'')}">
+          <div class="row"><input type="text" id="set-cloud-repo" class="inp-sm" placeholder="仓库 owner/repo" value="${App.Utils.escapeHtml(s.cloudRepo||'Wang1710/xiaowanzi-tai')}"><input type="text" id="set-cloud-branch" class="inp-sm" placeholder="分支" value="${App.Utils.escapeHtml(s.cloudBranch||'gh-pages')}"></div>
+          <input type="text" id="set-cloud-path" class="inp" placeholder="文件路径" value="${App.Utils.escapeHtml(s.cloudPath||'data/store.json')}">
+          <div class="row">
+            <button class="btn btn-ghost btn-sm" id="set-cloud-push">☁️ 上传到云端</button>
+            <button class="btn btn-ghost btn-sm" id="set-cloud-pull">☁️ 从云端拉取</button>
+            <label class="row" style="gap:4px;font-size:var(--f-sm)"><input type="checkbox" id="set-cloud-auto" ${(s.cloudAuto?'checked':'')}>自动同步</label>
+          </div>
+          <div id="cloud-status" class="fs-xs c-3">未同步</div>
+        </div>
+      </div>
       <div class="form-actions"><button class="btn btn-primary" id="set-save">保存</button></div>`);
     let total=0;
     for(let i=0;i<localStorage.length;i++){
@@ -3567,15 +3674,24 @@ App.Modules.Settings = (function(){
       };
       reader.readAsText(f);this.value='';
     });
+    // 云端同步按钮
+    document.getElementById('set-cloud-push').addEventListener('click',function(){App.Cloud.push();});
+    document.getElementById('set-cloud-pull').addEventListener('click',function(){App.Cloud.pull();});
     document.getElementById('set-save').addEventListener('click',()=>{
       const pwdInput=document.getElementById('set-profit-pwd').value;
       const next=Object.assign({},s,{
         city:document.getElementById('set-city').value.trim()||'绍兴',
         translationApiKey:document.getElementById('set-key').value.trim(),
-        homeSummaryHidden:document.getElementById('set-summary').value==='true'
+        homeSummaryHidden:document.getElementById('set-summary').value==='true',
+        cloudPat:document.getElementById('set-cloud-pat').value.trim(),
+        cloudRepo:document.getElementById('set-cloud-repo').value.trim()||'Wang1710/xiaowanzi-tai',
+        cloudBranch:document.getElementById('set-cloud-branch').value.trim()||'gh-pages',
+        cloudPath:document.getElementById('set-cloud-path').value.trim()||'data/store.json',
+        cloudAuto:document.getElementById('set-cloud-auto').checked
       });
       if(pwdInput!=='')next.profitPassword=pwdInput; // 留空不修改
       App.Store.setSettings(next);
+      if(next.cloudAuto)App.Cloud.initAuto();
       App.closeModal();App.showToast('设置已保存');
       if(App.Modules.Home&&App.Router.getCurrentView()==='home'){App.Modules.Home.render()}
     });
@@ -4036,6 +4152,7 @@ App.Modules.Tasks = (function(){
       if(m&&m.init)m.init();
     });
     App.Router.init();
+    if(App.Cloud)App.Cloud.initAuto();
     // 全局搜索
     initGlobalSearch();
     // 月度简报检测
