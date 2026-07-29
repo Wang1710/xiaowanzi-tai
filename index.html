@@ -583,10 +583,11 @@ details.card>.card-body{padding:0 14px 12px}
 .home-cover .hc-photo{width:100%;height:22vh;min-height:130px;object-fit:contain;display:block;background:var(--bg-soft)}
 .home-cover .hc-ph{width:100%;height:22vh;min-height:130px;display:flex;align-items:center;justify-content:center;
   font-size:40px;color:var(--text-3);background:var(--bg-soft)}
-.home-cover .hc-info{padding:8px 12px;display:flex;align-items:center;gap:8px}
-.home-cover .hc-text{flex:1;font-size:var(--f-md);color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.home-cover .hc-info{padding:8px 12px;display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+.home-cover .hc-text{font-size:var(--f-md);color:var(--text);width:100%;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.home-cover .hc-meta{display:flex;align-items:center;gap:8px;width:100%}
 .home-cover .hc-date{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0}
-.home-cover .hc-fallback{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0;background:var(--bg-soft);padding:2px 8px;border-radius:10px}
+.home-cover .hc-fallback{font-size:var(--f-xs);color:var(--text-3);white-space:nowrap;flex-shrink:0;background:var(--bg-soft);padding:2px 8px;border-radius:10px;margin-left:auto}
 .home-cover.hc-empty{background:linear-gradient(135deg,var(--bg-soft),var(--bg-card))}
 .home-cover.hc-empty .hc-ph{border:2px dashed var(--border);box-sizing:border-box;background:transparent;color:var(--text-3)}
 .home-cover.hc-empty .hc-text{color:var(--text-3)}
@@ -1426,8 +1427,10 @@ App.Modules.Home = (function(){
       ${photo}
       <div class="hc-info">
         <div class="hc-text">${text}</div>
-        <div class="hc-date">${dateLabel}</div>
-        ${fallbackHint}
+        <div class="hc-meta">
+          <div class="hc-date">${dateLabel}</div>
+          ${fallbackHint}
+        </div>
       </div>
     </div>`;
   }
