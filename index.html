@@ -85,19 +85,21 @@ a{color:inherit;text-decoration:none}
 }
 .sidebar-logo:active{transform:scale(.92);opacity:.85}
 #sidebar.expanded .sidebar-logo{width:100%;height:42px;font-size:16px;font-weight:700}
-.nav-tree{display:flex;flex-direction:column;gap:2px;overflow-y:auto;padding:0 3px;flex-shrink:0}
+.nav-tree{display:flex;flex-direction:column;align-items:center;gap:8px;overflow-y:auto;padding:6px 4px;flex-shrink:0}
 .nav-item{
-  width:52px;height:44px;border-radius:var(--r-md);
+  width:48px;height:48px;border-radius:var(--r-lg);
   display:flex;align-items:center;justify-content:center;gap:8px;
   color:var(--text-2);transition:all .15s;flex-shrink:0;
+  background:var(--bg-card);box-shadow:var(--shadow);
 }
-.nav-short{font-size:var(--f-xs);font-weight:700;letter-spacing:1px;white-space:nowrap;display:inline-block;padding:3px 10px;border-radius:999px;line-height:1.4;color:#fff}
-#sidebar.expanded .nav-item{width:100%;justify-content:flex-start;padding:0 8px;height:46px;gap:8px}
-#sidebar.expanded .nav-short{display:none}
+.nav-item:active{transform:scale(.96);opacity:.9}
+.nav-icon{font-size:20px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+.nav-short{display:none}
 .nav-item .nav-label{display:none;font-size:var(--f-md);white-space:nowrap;font-weight:500}
+#sidebar.expanded .nav-item{width:calc(100% - 16px);height:48px;justify-content:center;padding:0 10px;margin:0 auto;gap:10px}
+#sidebar.expanded .nav-icon{font-size:22px}
 #sidebar.expanded .nav-label{display:inline}
-.nav-item.active{background:var(--bg-card);color:var(--text)}
-.nav-item:active{background:rgba(0,0,0,.05)}
+.nav-item.active{background:var(--bg-soft);color:var(--text);box-shadow:var(--shadow-2)}
 .sidebar-footer{
   width:44px;height:44px;border-radius:var(--r-md);
   display:flex;align-items:center;justify-content:center;
@@ -236,22 +238,9 @@ details.card[open]>summary::after{transform:rotate(180deg)}
 details.card>.card-body{padding:0 14px 12px}
 
 /* emoji 字体兜底 */
-.sidebar-footer,.weather-icon{font-family:var(--emoji-font),var(--font)}
+.sidebar-footer,.weather-icon,.nav-icon{font-family:var(--emoji-font),var(--font)}
 
-.nav-item .nav-short{background:var(--nav-bg-home);color:#fff}
-.nav-item.nav-home .nav-short{background:var(--nav-bg-home)}
-.nav-item.nav-items .nav-short{background:var(--nav-bg-items)}
-.nav-item.nav-daily .nav-short{background:var(--nav-bg-daily)}
-.nav-item.nav-projects .nav-short{background:var(--nav-bg-projects)}
-.nav-item.nav-oils .nav-short{background:var(--nav-bg-oils)}
-.nav-item.nav-inspiration .nav-short{background:var(--nav-bg-inspiration)}
-.nav-item.nav-profit .nav-short{background:var(--nav-bg-profit)}
-.nav-item.nav-checklist .nav-short{background:var(--nav-bg-checklist)}
-.nav-item.nav-books .nav-short{background:var(--nav-bg-books)}
-.nav-item.nav-tasks .nav-short{background:var(--nav-bg-tasks)}
-.nav-item.nav-moment .nav-short{background:var(--nav-bg-moment)}
-.nav-item.active .nav-short{color:var(--text);background:rgba(0,0,0,.06);font-weight:700}
-.nav-item.active{box-shadow:none;background:transparent!important}
+/* 菜单项卡片颜色可在这里扩展，如需要模块色左侧条 */
 /* 各模块马卡龙背景 */
 body.view-home{--bg-main:#f0f7ff;--bg-soft:#e6f2ff}
 body.view-tasks{--bg-main:#f0fbfa;--bg-soft:#e6f8f7}
@@ -1241,7 +1230,7 @@ App.Router = (function(){
     // 渲染导航（上方常用 + 下方工具，中间用间隔分开）
     const bindNav=(ul,list)=>{
       ul.innerHTML=list.map(n=>{
-        return `<li class="nav-item nav-${n.view}" data-view="${n.view}"><span class="nav-short">${n.short}</span><span class="nav-label">${n.label}</span></li>`;
+        return `<li class="nav-item nav-${n.view}" data-view="${n.view}"><span class="nav-icon">${n.icon}</span><span class="nav-short">${n.short}</span><span class="nav-label">${n.label}</span></li>`;
       }).join('');
       ul.querySelectorAll('.nav-item').forEach(el=>{
         el.addEventListener('click',()=>{
