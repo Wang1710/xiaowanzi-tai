@@ -112,7 +112,14 @@ a{color:inherit;text-decoration:none}
 #sidebar-overlay.visible{display:block}
 
 /* 主内容区 */
-#main-content{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#main-content{
+  flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0;
+  margin:6px 8px 10px 4px;
+  background:var(--bg-main);
+  border:2px solid var(--border);
+  border-radius:50% / 5%;
+  box-shadow:var(--shadow-2);
+}
 .top-bar{
   display:flex;align-items:center;gap:6px;padding:6px 8px;
   border-bottom:1px solid var(--border);background:var(--bg-main);flex-shrink:0;
@@ -134,7 +141,7 @@ a{color:inherit;text-decoration:none}
 .search-result-item .sr-snippet mark{background:var(--c-yellow);border-radius:2px}
 .search-empty{padding:16px;text-align:center;color:var(--text-3);font-size:var(--f-sm)}
 
-#view-container{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:10px 10px 24px}
+#view-container{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 12px 44px}
 .view-panel{display:none;flex-direction:column;gap:10px}
 .view-panel.active{display:flex}
 .view-header{display:flex;align-items:center;gap:8px;margin-bottom:2px;flex-wrap:wrap}
