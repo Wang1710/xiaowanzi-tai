@@ -349,8 +349,8 @@ body.view-books{--bg-main:#f5f2ff;--bg-soft:#ede6ff}
 .task-content{cursor:pointer}
 .task-priority-select,.task-category-select{width:auto;min-width:66px;font-size:var(--f-sm);padding:6px 8px;height:36px;box-sizing:border-box}
 .task-priority-select:disabled{opacity:.4}
-.task-input-group{display:block;width:100%}
-.task-input-group #task-input{width:100%;height:36px;min-height:36px;box-sizing:border-box}
+.task-input-group{display:flex;align-items:center;gap:6px}
+.task-input-group #task-input{flex:1;min-width:0;height:36px;min-height:36px;box-sizing:border-box}
 #task-add{height:36px;min-height:36px;padding:0 14px;box-sizing:border-box}
 .task-priority{font-size:var(--f-xs);color:var(--danger);margin-left:4px}
 .task-section{margin-bottom:8px}
@@ -3891,10 +3891,10 @@ App.Modules.Tasks = (function(){
             <select id="task-priority" class="task-priority-select"><option value="0">日常</option><option value="1">❗</option><option value="2">❗❗</option></select>
             <select id="task-category" class="task-category-select">${getTaskCats().map(c=>`<option value="${c.key}">${App.Utils.escapeHtml(c.label)}</option>`).join('')}</select>
             ${App.speechBtnHTML('task-input')}
-            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
           </div>
-          <div class="task-input-group mb6">
-            <input type="text" id="task-input" placeholder="输入事项…" style="width:100%">
+          <div class="row task-input-group mb6" style="gap:6px">
+            <input type="text" id="task-input" placeholder="输入事项…" style="flex:1;min-width:0">
+            <button class="btn btn-primary btn-sm" id="task-add">＋</button>
           </div>
           <div class="tasks-list" id="task-list"></div>
         </div>
