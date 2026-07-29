@@ -3477,6 +3477,24 @@ App.Modules.Moment = (function(){
 App.Modules.Settings = (function(){
   function open(){
     const s=App.Store.getSettings();
+    // 下载当前页面源码为单个 HTML 文件（离线版）：优先 fetch 同源页面源码，失败回退到当前 DOM
+    async function downloadOffline(){
+      let src;
+      try{
+        const r=await fetch(location.href,{cache:'no-store'});
+        if(!r.ok)throw new Error('HTTP '+r.status);
+        src=await r.text();
+      }catch(e){
+        src='<!DOCTYPE html>\n'+document.documentElement.outerHTML;
+      }
+      const blob=new Blob([src],{type:'text/html'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url;a.download='小丸子的工作台.html';
+      document.body.appendChild(a);a.click();a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),2000);
+      App.showToast('已开始下载「小丸子的工作台.html」，到「文件」App 里打开即可');
+    }
     App.openModal('设置',`
       <div class="form-row"><label>盈亏管理密码<br><span class="fs-xs c-3">设置后每次打开盈亏需验证</span></label><input type="password" id="set-profit-pwd" value="" placeholder="${s.profitPassword?'已设置（留空=不修改）':'留空则不加密'}"></div>
       <div class="form-row">
@@ -3491,6 +3509,10 @@ App.Modules.Settings = (function(){
           <button class="btn btn-ghost btn-sm" id="set-import-all">⬆️ 导入备份</button>
           <input type="file" id="set-import-file" accept="application/json,.json" style="display:none">
         </div>
+      </div>
+      <div class="form-row">
+        <label>💾 离线版（保存本文件到手机）<br><span class="fs-xs c-3">点「下载离线版」把整个网页存成单个 HTML 文件；传到手机后用「文件」App 打开→Safari 里「添加到主屏幕」，之后断网也能直接打开，无需 VPN</span></label>
+        <div class="row"><button class="btn btn-ghost btn-sm" id="set-download-offline">💾 下载离线版</button></div>
       </div>
       <div class="form-row">
         <label>☁️ 云端同步（GitHub）<br><span class="fs-xs c-3">把数据存到你的 GitHub 仓库，换网址/清缓存都不丢；Token 只存在你本机</span></label>
@@ -3540,6 +3562,8 @@ App.Modules.Settings = (function(){
       };
       reader.readAsText(f);this.value='';
     });
+    // 离线版下载
+    document.getElementById('set-download-offline').addEventListener('click',downloadOffline);
     // 云端同步按钮
     document.getElementById('set-cloud-push').addEventListener('click',function(){App.Cloud.push();});
     document.getElementById('set-cloud-pull').addEventListener('click',function(){App.Cloud.pull();});
