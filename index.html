@@ -263,12 +263,15 @@ body.view-books{--bg-main:#f5f2ff;--bg-soft:#ede6ff}
 .summary-list .num.zero{color:var(--success)}
 .summary-empty{font-size:var(--f-sm);color:var(--text-3);padding:4px 0}
 .home-task-list{display:flex;flex-direction:column;gap:4px}
-.home-task-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-radius:var(--r-sm);min-height:32px;cursor:pointer}
+.home-task-item{display:flex;align-items:center;flex-wrap:nowrap;gap:8px;padding:6px 4px;border-radius:var(--r-sm);min-height:32px;cursor:pointer}
 .home-task-item.completed .home-task-content{text-decoration:line-through;color:var(--text-3)}
 .home-task-check{width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0}
 .home-task-check.todo-check{width:18px;height:18px;border:2px solid var(--text-3);border-radius:4px;color:#fff}
-.home-task-check.todo-check.checked{background:var(--c-green);border-color:var(--c-green)}
-.home-task-content{flex:1;font-size:var(--f-sm);word-break:break-word}
+.home-task-check.checked{background:var(--c-green);border-color:var(--c-green);color:#fff}
+.home-task-content{flex:1;font-size:var(--f-sm);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.home-task-badges{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.home-task-priority{font-size:var(--f-xs);color:var(--danger)}
+.home-task-cat-header{display:flex;align-items:center;gap:6px;font-size:var(--f-xs);color:var(--text-2);margin:8px 4px 4px;font-weight:500}
 .home-completed-section{margin-top:6px;border-top:1px dashed var(--border);padding-top:6px}
 .home-completed-toggle{display:flex;align-items:center;gap:4px;font-size:var(--f-xs);color:var(--text-3);cursor:pointer;padding:2px 0;user-select:none}
 .home-completed-body{display:none}
@@ -1534,6 +1537,20 @@ App.Modules.Home = (function(){
       else App.Router.navigate('moment');
     });
   }
+  const DEFAULT_TASK_CATS=[
+    {key:'life', label:'生活', color:'#7ab87a'},
+    {key:'work', label:'工作', color:'#5b8db8'}
+  ];
+  function getTaskCats(){
+    const s=App.Store.getSettings();
+    const custom=s.customTaskCats||[];
+    const map={};
+    DEFAULT_TASK_CATS.forEach(c=>map[c.key]={...c});
+    custom.forEach(c=>map[c.key]={...c});
+    return Object.values(map);
+  }
+  function getTaskCatColor(key){const c=getTaskCats().find(x=>x.key===key);return c?c.color:'#999';}
+  function getTaskCatLabel(key){const c=getTaskCats().find(x=>x.key===key);return c?c.label:'其他';}
   function renderSummary(){
     const s=App.Store.getTodaySummary();
     const body=document.getElementById('summary-body');
@@ -1571,22 +1588,38 @@ App.Modules.Home = (function(){
         countEl.textContent=label;
       }
       if(!tasks.length){el.innerHTML='<div class="summary-empty">还没有待办事项 🌿</div>';return}
-      // 渲染单项
-      const renderItem=t=>{
+      function groupByCategory(arr){
+        const cats=getTaskCats();
+        const groups={};
+        cats.forEach(c=>groups[c.key]=[]);
+        groups['_other']=[];
+        arr.forEach(t=>{
+          const k=t.category||'_other';
+          if(groups[k]) groups[k].push(t); else groups['_other'].push(t);
+        });
+        return cats.map(c=>({cat:c,items:groups[c.key]})).filter(g=>g.items.length).concat(groups['_other'].length?[{cat:{key:'_other',label:'其他',color:'#999'},items:groups['_other']}]:[]);
+      }
+      function renderItem(t){
+        const pri=['','❗','❗❗'][t.priority||0];
         const due=t.dueDate?`<span class="home-task-due ${App.Utils.isOverdue(t.dueDate)?'overdue':''}">📅${t.dueDate}</span>`:'';
+        const badges=`<span class="home-task-badges">${pri?`<span class="home-task-priority">${pri}</span>`:''}${due}</span>`;
+        const mark=t.type==='todo'?(t.completed?'✓':''):(t.completed?'✓':'📌');
         return `
-        <div class="home-task-item ${t.type} ${t.type==='todo'&&t.completed?'completed':''}" data-id="${t.id}">
-          <span class="home-task-check ${t.type==='todo'?'todo-check':''} ${t.type==='todo'&&t.completed?'checked':''}">${t.type==='todo'?(t.completed?'✓':''):'📌'}</span>
+        <div class="home-task-item ${t.type} ${t.completed?'completed':''}" data-id="${t.id}">
+          <span class="home-task-check ${t.type==='todo'?'todo-check':''} ${t.completed?'checked':''}">${mark}</span>
           <span class="home-task-content">${App.Utils.escapeHtml(t.content)}</span>
-          ${due}
+          ${badges}
         </div>`;
-      };
-      let html=pending.map(renderItem).join('');
+      }
+      function renderGroup(g){
+        return `<div class="home-task-cat-header"><span class="task-cat-dot" style="background:${g.cat.color}"></span>${App.Utils.escapeHtml(g.cat.label)}</div>${g.items.map(renderItem).join('')}`;
+      }
+      let html=groupByCategory(pending).map(renderGroup).join('');
       // 已完成区域（折叠）
       if(done.length){
         html+=`<div class="home-completed-section" id="home-completed-sec">
           <div class="home-completed-toggle">✅ 已完成 (${done.length}) <span style="margin-left:auto;font-size:10px">▸</span></div>
-          <div class="home-completed-body">${done.map(renderItem).join('')}</div>
+          <div class="home-completed-body">${groupByCategory(done).map(renderGroup).join('')}</div>
         </div>`;
       }
       el.innerHTML=html||'<div class="summary-empty">还没有待办事项 🌿</div>';
