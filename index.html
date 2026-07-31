@@ -971,7 +971,7 @@ App.Store = (function(){
     // music（我的歌）
     getMusic().forEach(s=>{
       const txt=`${s.title||''} ${s.artist||''} ${s.album||''} ${s.note||''}`;
-      if(txt.toLowerCase().includes(q))pushRes('我的歌',s.id,`${s.title||''} - ${s.artist||''}`,'');
+      if(txt.toLowerCase().includes(q))pushRes('我的歌库',s.id,`${s.title||''} - ${s.artist||''}`,'');
     });
     // moment（每日一瞬）
     const momentAll=getMomentAll();
@@ -1322,7 +1322,7 @@ App.Speech = (function(){
 App.Router = (function(){
   // 导航项：按原顺序平铺显示（移除上下分组间隔）
   const NAV_TOP=[
-    {view:'home',icon:'🏠',label:'首页',short:'首页'},
+    {view:'home',icon:'🏠',label:'首页总览',short:'总览'},
     {view:'tasks',icon:'📋',label:'事项管理',short:'事项'},
     {view:'daily',icon:'📝',label:'每日小事',short:'每日'},
     {view:'moment',icon:'📸',label:'每日一瞬',short:'一瞬'},
@@ -1335,7 +1335,7 @@ App.Router = (function(){
     {view:'inspiration',icon:'💡',label:'灵感小站',short:'灵感'},
     {view:'checklist',icon:'✅',label:'清单小盒',short:'清单'},
     {view:'books',icon:'📚',label:'书海小藏',short:'书海'},
-    {view:'music',icon:'🎵',label:'我的歌',short:'我的歌'}
+    {view:'music',icon:'🎵',label:'我的歌库',short:'歌库'}
   ];
   const NAV=[...NAV_TOP,...NAV_BOTTOM];
   const rendered={};
@@ -1385,7 +1385,7 @@ App.Router = (function(){
   function expandSidebar(){
     document.getElementById('sidebar').classList.add('expanded');
     document.getElementById('sidebar-overlay').classList.add('visible');
-    document.getElementById('sidebar-logo').textContent='燕燕小丸子';
+    document.getElementById('sidebar-logo').textContent='燕燕小丸';
   }
   function collapseSidebar(){
     document.getElementById('sidebar').classList.remove('expanded');
@@ -1481,9 +1481,9 @@ App.Modules.Home = (function(){
           </div>
         </details>
         <div class="card" id="home-music-card">
-          <div class="card-header"><h3>🎵 我的歌</h3><span class="count" id="home-music-count" style="margin-left:auto"></span></div>
+          <div class="card-header"><h3>🎵 我的歌库</h3><span class="count" id="home-music-count" style="margin-left:auto"></span></div>
           <div class="card-body" id="home-music"></div>
-          <button class="btn btn-ghost btn-sm mt8" onclick="App.Router.navigate('music')">去我的歌 →</button>
+          <button class="btn btn-ghost btn-sm mt8" onclick="App.Router.navigate('music')">去我的歌库 →</button>
         </div>
         <details class="card" id="monthly-report-card">
           <summary><span>📊 月度复盘简报</span><span class="report-status" id="report-status"></span></summary>
@@ -4140,7 +4140,7 @@ App.Modules.Music = (function(){
   function render(){
     const panel=document.getElementById('view-music');
     panel.innerHTML=`
-      <div class="view-header"><h2>🎵 我的歌</h2>
+      <div class="view-header"><h2>🎵 我的歌库</h2>
         <button class="btn btn-primary btn-sm" id="music-add">＋ 收藏</button>
       </div>
       <div class="card">
@@ -4299,9 +4299,9 @@ App.Modules.Music = (function(){
             const idx=+el.dataset.idx;
             const r=list[idx];
             // 跳转到对应模块
-            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·心情':'daily','事项管理':'tasks','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment','我的歌':'music'};
+            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·心情':'daily','事项管理':'tasks','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment','我的歌库':'music'};
             const base=r.module.split('·')[0];
-            const view={物品小集:'items',每日小事:'daily',事项:'tasks',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment',我的歌:'music'}[base]||'home';
+            const view={物品小集:'items',每日小事:'daily',事项:'tasks',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment',我的歌库:'music'}[base]||'home';
             App.Router.navigate(view);
             results.classList.remove('visible');input.value='';
           });
