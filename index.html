@@ -1878,7 +1878,7 @@ App.Modules.Projects = (function(){
   }
       function renderGantt(){
         const daysInMonth=new Date(ganttYear,ganttMonth,0).getDate();
-        const projects=App.Store.getProjects().filter(p=>p.status==='active');
+        const projects=App.Store.getProjects();
         document.getElementById('g-month').textContent=`${ganttYear}年${ganttMonth}月`;
         const todayStr=App.Utils.todayStr();
         const dayNames=['一','二','三','四','五','六','日'];
