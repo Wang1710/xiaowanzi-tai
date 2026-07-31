@@ -647,6 +647,24 @@ body.view-books{--bg-main:#f5f2ff;--bg-soft:#ede6ff}
 .img-lightbox.show{display:flex}
 .img-lightbox img{max-width:92%;max-height:82%;border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.5)}
 .img-lightbox .il-tip{position:absolute;bottom:24px;color:#fff;font-size:var(--f-xs);opacity:.8}
+
+/* ============ 🎵 我的歌 Music ============ */
+.music-list{display:flex;flex-direction:column;gap:8px;padding:8px 0}
+.music-item{display:flex;align-items:flex-start;gap:10px;background:var(--bg-card);border-radius:var(--r-md);
+  box-shadow:var(--shadow);padding:10px 12px;position:relative}
+.music-item.fav{box-shadow:0 0 0 2px rgba(245,204,215,.5),var(--shadow)}
+.music-fav{font-size:22px;line-height:1;flex-shrink:0;cursor:pointer;user-select:none;padding-top:2px}
+.music-fav.on{animation:music-pop .3s ease}
+@keyframes music-pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
+.music-main{flex:1;min-width:0;cursor:pointer}
+.music-title{font-size:var(--f-md);font-weight:600;color:var(--text);line-height:1.3;word-break:break-word}
+.music-artist{font-size:var(--f-sm);color:var(--text-2);margin-top:2px;word-break:break-word}
+.music-album{font-size:var(--f-xs);color:var(--text-3);margin-top:2px;word-break:break-word}
+.music-note{font-size:var(--f-xs);color:var(--text-2);margin-top:4px;font-style:italic;word-break:break-word;
+  background:var(--bg-soft);border-radius:8px;padding:4px 8px}
+.music-del{position:absolute;top:6px;right:6px;width:24px;height:24px;border:none;background:transparent;
+  color:var(--text-3);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;border-radius:50%}
+.music-del:active{background:var(--bg-soft)}
 </style>
 </head>
 <body class="view-home">
@@ -679,6 +697,7 @@ body.view-books{--bg-main:#f5f2ff;--bg-soft:#ede6ff}
       <section id="view-checklist" class="view-panel"></section>
       <section id="view-books" class="view-panel"></section>
       <section id="view-tasks" class="view-panel"></section>
+      <section id="view-music" class="view-panel"></section>
     </div>
   </main>
 </div>
@@ -794,7 +813,7 @@ App.Store = (function(){
   const KEYS={
     items:'mj_items',daily:'mj_daily',projects:'mj_projects',oils:'mj_oils',
     inspiration:'mj_inspiration',profit:'mj_profit',checklists:'mj_checklists',
-    settings:'mj_settings',reports:'mj_monthly_reports',books:'mj_books',
+    settings:'mj_settings',reports:'mj_monthly_reports',books:'mj_books',music:'mj_music',
     moment:'mj_moment',tasks:'mj_tasks'
   };
   function read(key,def){try{const v=localStorage.getItem(key);return v?JSON.parse(v):def}catch(e){return def}}
@@ -860,6 +879,8 @@ App.Store = (function(){
   // books
   function getBooks(){return read(KEYS.books,[])}
   function setBooks(arr){write(KEYS.books,arr)}
+  function getMusic(){return read(KEYS.music,[])}
+  function setMusic(arr){write(KEYS.music,arr)}
 
   // moment（每日一瞬）
   function getMomentAll(){return read(KEYS.moment,{})}
@@ -937,6 +958,11 @@ App.Store = (function(){
     getBooks().forEach(b=>{
       const txt=`${b.title||''} ${(b.author||'')} ${b.status||''} ${(b.note||'')}`;
       if(txt.toLowerCase().includes(q))pushRes('书海小藏',b.id,`${b.title||''} ${b.status||''}`,'');
+    });
+    // music（我的歌）
+    getMusic().forEach(s=>{
+      const txt=`${s.title||''} ${s.artist||''} ${s.album||''} ${s.note||''}`;
+      if(txt.toLowerCase().includes(q))pushRes('我的歌',s.id,`${s.title||''} - ${s.artist||''}`,'');
     });
     // moment（每日一瞬）
     const momentAll=getMomentAll();
@@ -1030,6 +1056,7 @@ App.Store = (function(){
     getProfitAll,getProfit,setProfit,
     getChecklists,setChecklists,
     getBooks,setBooks,
+    getMusic,setMusic,
     getMomentAll,setMomentAll,getMoment,setMoment,
     getReports,setReports,
     exportAll,importAll,
@@ -1298,7 +1325,8 @@ App.Router = (function(){
     {view:'oils',icon:'🌿',label:'精油小册',short:'精油'},
     {view:'inspiration',icon:'💡',label:'灵感小站',short:'灵感'},
     {view:'checklist',icon:'✅',label:'清单小盒',short:'清单'},
-    {view:'books',icon:'📚',label:'书海小藏',short:'书海'}
+    {view:'books',icon:'📚',label:'书海小藏',short:'书海'},
+    {view:'music',icon:'🎵',label:'我的歌',short:'我的歌'}
   ];
   const NAV=[...NAV_TOP,...NAV_BOTTOM];
   const rendered={};
@@ -4056,6 +4084,113 @@ App.Modules.Tasks = (function(){
   return {render,onShow};
 })();
 
+/* ============ 🎵 我的歌 Music ============ */
+App.Modules.Music = (function(){
+  function getList(){return App.Store.getMusic();}
+  function saveList(arr){App.Store.setMusic(arr);}
+  function findSong(id){return getList().find(s=>s.id===id);}
+  function sortList(){
+    return getList().slice().sort((a,b)=>{
+      if(!!a.favorite!==!!b.favorite) return (b.favorite?1:0)-(a.favorite?1:0);
+      return (b.createdAt||'')<(a.createdAt||'')?-1:1;
+    });
+  }
+  function render(){
+    const panel=document.getElementById('view-music');
+    panel.innerHTML=`
+      <div class="view-header"><h2>🎵 我的歌</h2>
+        <button class="btn btn-primary btn-sm" id="music-add">＋ 收藏</button>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="row mb6" style="gap:6px">
+            <input type="text" id="music-title" placeholder="歌名…" style="flex:1;min-width:0">
+            <input type="text" id="music-artist" placeholder="歌手…" style="flex:1;min-width:0">
+          </div>
+          <div class="row mb6" style="gap:6px">
+            <input type="text" id="music-album" placeholder="专辑（可选）" style="flex:1;min-width:0">
+          </div>
+          <div class="row" style="gap:6px">
+            <input type="text" id="music-note" placeholder="备注/心情（可选）" style="flex:1;min-width:0">
+            <button class="btn btn-primary btn-sm" id="music-add-btn">＋ 添加</button>
+          </div>
+        </div>
+      </div>
+      <div class="music-list" id="music-list"></div>`;
+    document.getElementById('music-add-btn').addEventListener('click',addSong);
+    document.getElementById('music-add').addEventListener('click',()=>{const t=document.getElementById('music-title');if(t)t.focus();});
+    ['music-title','music-artist'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el)el.addEventListener('keydown',e=>{if(e.key==='Enter')addSong();});
+    });
+    renderList();
+  }
+  function addSong(){
+    const title=document.getElementById('music-title').value.trim();
+    const artist=document.getElementById('music-artist').value.trim();
+    const album=document.getElementById('music-album').value.trim();
+    const note=document.getElementById('music-note').value.trim();
+    if(!title&&!artist){App.showToast('至少填歌名或歌手');return;}
+    const list=getList();
+    list.push({id:App.Utils.generateUUID(),title,artist,album,note,favorite:false,createdAt:new Date().toISOString()});
+    saveList(list);
+    document.getElementById('music-title').value='';
+    document.getElementById('music-artist').value='';
+    document.getElementById('music-album').value='';
+    document.getElementById('music-note').value='';
+    renderList();
+  }
+  function renderList(){
+    const el=document.getElementById('music-list');if(!el)return;
+    const list=sortList();
+    if(!list.length){el.innerHTML='<div class="empty-state" style="padding:20px">歌单还空空如也，收藏第一首吧 🎵</div>';return;}
+    el.innerHTML=list.map(s=>`
+      <div class="music-item ${s.favorite?'fav':''}" data-id="${s.id}">
+        <span class="music-fav ${s.favorite?'on':''}" data-id="${s.id}">${s.favorite?'❤':'🤍'}</span>
+        <div class="music-main" data-id="${s.id}">
+          <div class="music-title">${App.Utils.escapeHtml(s.title||'未命名')}</div>
+          ${s.artist?`<div class="music-artist">${App.Utils.escapeHtml(s.artist)}</div>`:''}
+          ${s.album?`<div class="music-album">专辑：${App.Utils.escapeHtml(s.album)}</div>`:''}
+          ${s.note?`<div class="music-note">${App.Utils.escapeHtml(s.note)}</div>`:''}
+        </div>
+        <button class="btn-icon music-del" data-id="${s.id}" title="删除">×</button>
+      </div>`).join('');
+    bindEvents();
+  }
+  function bindEvents(){
+    document.querySelectorAll('#music-list .music-fav').forEach(el=>el.addEventListener('click',e=>{
+      e.stopPropagation();
+      const list=getList();const s=list.find(x=>x.id===el.dataset.id);if(!s)return;
+      s.favorite=!s.favorite;saveList(list);renderList();
+    }));
+    document.querySelectorAll('#music-list .music-main').forEach(el=>el.addEventListener('click',()=>editSong(el.dataset.id)));
+    document.querySelectorAll('#music-list .music-del').forEach(b=>b.addEventListener('click',e=>{
+      e.stopPropagation();
+      const list=getList().filter(x=>x.id!==b.dataset.id);saveList(list);renderList();
+    }));
+  }
+  function editSong(id){
+    const list=getList();const s=list.find(x=>x.id===id);if(!s)return;
+    App.openModal('编辑歌曲',`
+      <div class="form-row"><label>歌名</label><input type="text" id="edit-music-title" value="${App.Utils.escapeHtml(s.title||'')}"></div>
+      <div class="form-row"><label>歌手</label><input type="text" id="edit-music-artist" value="${App.Utils.escapeHtml(s.artist||'')}"></div>
+      <div class="form-row"><label>专辑</label><input type="text" id="edit-music-album" value="${App.Utils.escapeHtml(s.album||'')}"></div>
+      <div class="form-row"><label>备注/心情</label><input type="text" id="edit-music-note" value="${App.Utils.escapeHtml(s.note||'')}"></div>
+      <div class="form-actions"><button class="btn btn-ghost" onclick="App.closeModal()">取消</button><button class="btn btn-primary" id="edit-music-save">保存</button></div>`);
+    document.getElementById('edit-music-save').addEventListener('click',()=>{
+      const title=document.getElementById('edit-music-title').value.trim();
+      const artist=document.getElementById('edit-music-artist').value.trim();
+      const album=document.getElementById('edit-music-album').value.trim();
+      const note=document.getElementById('edit-music-note').value.trim();
+      if(!title&&!artist){App.showToast('至少填歌名或歌手');return;}
+      s.title=title;s.artist=artist;s.album=album;s.note=note;
+      saveList(list);App.closeModal();renderList();App.showToast('已更新');
+    });
+  }
+  function onShow(){render();}
+  return {render,onShow};
+})();
+
 (function(){
   function init(){
     // 检测 localStorage
@@ -4122,9 +4257,9 @@ App.Modules.Tasks = (function(){
             const idx=+el.dataset.idx;
             const r=list[idx];
             // 跳转到对应模块
-            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·心情':'daily','事项管理':'tasks','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment'};
+            const map={'物品小集':'items','每日小事·速记':'daily','每日小事·心情':'daily','事项管理':'tasks','项目小栏':'projects','精油小册':'oils','灵感·清单':'inspiration','灵感·素材':'inspiration','盈亏管理':'profit','清单小盒':'checklist','每日一瞬':'moment','我的歌':'music'};
             const base=r.module.split('·')[0];
-            const view={物品小集:'items',每日小事:'daily',事项:'tasks',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment'}[base]||'home';
+            const view={物品小集:'items',每日小事:'daily',事项:'tasks',项目小栏:'projects',精油小册:'oils',灵感:'inspiration',盈亏管理:'profit',清单小盒:'checklist',每日一瞬:'moment',我的歌:'music'}[base]||'home';
             App.Router.navigate(view);
             results.classList.remove('visible');input.value='';
           });
